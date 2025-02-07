@@ -23,7 +23,7 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
         setCurrentUserId(userId); // Set the current user ID
         if (userId) {
           // Fetch messages between the logged-in user and the selected user
-          const fetchedMessages = await getMessages(userId,user.id);
+          const fetchedMessages = await getMessages(userId,user?.id);
           setMessages(fetchedMessages);
         } else {
           console.error('User ID not found');
@@ -39,9 +39,9 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
   // Polling function to check for new messages from the server every 3 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (currentUserId && user.id) {
+      if (currentUserId && user?.id) {
         try {
-          const updatedMessages = await getMessages(currentUserId, user.id);
+          const updatedMessages = await getMessages(currentUserId, user?.id);
           setMessages(updatedMessages); // Update the messages state with new data
         } catch (error) {
           console.error('Error fetching new messages:', error);
@@ -50,16 +50,16 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
     }, 3000); // 3-second polling interval
 
     return () => clearInterval(interval); // Cleanup the interval on component unmount
-  }, [currentUserId, user.id]);
+  }, [currentUserId, user?.id]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim()) {
       try {
         const currentUserId = await AsyncStorage.getItem('userId');
-        if (currentUserId && user.id) {
+        if (currentUserId && user?.id) {
           const messageData = {
             senderId: currentUserId,
-            receiverId: user.id,
+            receiverId: user?.id,
             message: newMessage,
             timestamp: Date.now(),
             status: 'sent',
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 10,
-    backgroundColor: '#008080',
+    backgroundColor: '#01ebff',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -163,11 +163,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   sentMessage: {
-    backgroundColor: '#008080',
+    backgroundColor: '2px solid rgb(1, 235, 252)',
     alignSelf: 'flex-end',  // Align the sender's messages to the right
   },
   receivedMessage: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: 'rgba(27, 27, 27, 0.17)',
     alignSelf: 'flex-start', // Align the receiver's messages to the left
   },
   messageText: {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     marginLeft: 10,
-    backgroundColor: '#008080',
+    backgroundColor: '2px solid rgb(1, 235, 252)',
     borderRadius: 20,
     padding: 10,
   },

@@ -1,50 +1,100 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Make sure AsyncStorage is imported
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserDetails } from '../models/UserDetails';
-import { fetchChatData } from '../services/chatServices';
+import { fetchChatData, getMessages, markMessagesAsRead } from '../services/chatServices';
+import { Message } from '../models/ChatMessage';
+import { useFocusEffect } from '@react-navigation/native';
 
+const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
+  const [chatData, setChatData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-const RecentChatsScreen = () => {
-  const [chatData, setChatData] = useState<UserDetails[]>([]); // State to store the chat data
-  const [loading, setLoading] = useState(true); // Loading state
+  const getChatData = async () => {
+    try {
+      const senderId = await AsyncStorage.getItem('userId');
+      if (senderId) {
+        const data = await fetchChatData(senderId);
+        const updatedData = await Promise.all(
+          data.map(async (user: UserDetails) => {
+            const receiverId = user?.id;
+            const messages: Message[] = await getMessages(senderId, receiverId);
+            const sortedMessages = messages.sort((a, b) => b.timestamp - a.timestamp);
+            const latestMessage = sortedMessages.length > 0 ? sortedMessages[0] : null;
+            const unreadMessages = messages.filter(
+              (message: Message) => message.status === 'unread' && message.receiverId === senderId
+            ).length;
+
+            return { user, latestMessage, unreadMessages };
+          })
+        );
+        setChatData(updatedData);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching chat data:', error);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const getChatData = async () => {
-      try {
-        const senderId = await AsyncStorage.getItem('userId'); // Get senderId from AsyncStorage
-        if (senderId) {
-          const data = await fetchChatData(senderId); // Fetch data using the senderId
-          setChatData(data); // Update the state with fetched data
-        }
-        setLoading(false); // Stop loading once data is fetched
-      } catch (error) {
-        console.error('Error fetching chat data:', error);
-        setLoading(false); // Stop loading if an error occurs
+    getChatData(); // Initial data fetch
+
+    const interval = setInterval(() => {
+      getChatData(); // Update chat data every 3 seconds
+    }, 3000);
+
+    // Cleanup interval on component unmount or when the screen loses focus
+    return () => clearInterval(interval);
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Call to refresh chat data when screen is focused
+      getChatData();
+    }, [])
+  );
+
+  const handleChatSelect = async (user: UserDetails) => {
+    try {
+      const senderId = await AsyncStorage.getItem('userId');
+      const receiverId = user.id;
+
+      if (senderId && receiverId) {
+        // Call markMessagesAsRead API to mark all messages between sender and receiver as read
+        await markMessagesAsRead(senderId, receiverId);
       }
-    };
 
-    getChatData(); // Call the async function
+      // Navigate to ChatScreen with the selected user
+      navigation.navigate('ChatScreen', { user: user });
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
 
-  }, []); // Empty dependency array means it will run only once when the component mounts
+  const renderChatItem = ({ item }: { item: any }) => {
+    if (!item?.user) {
+      return null;
+    }
 
-  const renderChatItem = ({ item }: { item: UserDetails }) => {
-    // Check if postModelList is not null and is an array
-    const hasPosts = Array.isArray(item.postModelList) && item.postModelList.length > 0;
-    
+    const { user, latestMessage, unreadMessages } = item;
+    const hasMessages = latestMessage !== null;
+
     return (
-      <TouchableOpacity style={styles.chatItem}>
-        <Image source={{ uri: item.profilePictureUrl }} style={styles.avatar} />
+      <TouchableOpacity
+        style={styles.chatItem}
+        onPress={() => handleChatSelect(user)} // Use the handleChatSelect function
+      >
+        <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
         <View style={styles.chatInfo}>
-          <Text style={styles.userName}>{item.firstName} {item.secondName}</Text>
+          <Text style={styles.userName}>{user.firstName} {user.secondName}</Text>
           <Text style={styles.lastMessage} numberOfLines={1}>
-            {hasPosts ? item.postModelList[0].content : 'No recent posts'}
+            {hasMessages ? latestMessage?.message : 'No recent messages'}
           </Text>
         </View>
-        {hasPosts && (
+        {unreadMessages > 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.postModelList.length}</Text>
+            <Text style={styles.badgeText}>{unreadMessages}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -52,14 +102,18 @@ const RecentChatsScreen = () => {
   };
 
   if (loading) {
-    return <Text>Loading...</Text>;
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
       <FlatList
         data={chatData}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.user?.id.toString()}
         renderItem={renderChatItem}
       />
     </View>

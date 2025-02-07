@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, Alert, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, Alert, FlatList, ActivityIndicator } from 'react-native';
 import { getUsers } from '../services/apiService';
 import { UserDetails } from '../models/UserDetails';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -46,8 +46,8 @@ const Users = ({ navigation }: { navigation: any }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
   }

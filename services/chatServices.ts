@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Message, SendMessage } from '../models/ChatMessage';
 
-const API_URL = 'http://192.168.0.245:8082/api';
+// const API_URL = 'http://192.168.0.245:8082/api';
+const API_URL = 'https://zion-app-8bcc080006a7.herokuapp.com/api';
 
 export const getMessages = async (senderId: string, receiverId: string): Promise<Message[]> => {
 
@@ -46,3 +47,26 @@ export const sendMessage = async (messageData: SendMessage) => {
     }
   };
   
+
+  export const markMessagesAsRead = async (senderId: string, receiverId: string) => {
+    try {
+      // Prepare the request body with sender and receiver ids
+      const requestData = {
+        senderId: senderId,
+        receiverId: receiverId
+      };
+  
+      // Make the POST request to mark messages as read
+      const response = await axios.post(`${API_URL}/markMessagesAsRead`, requestData);
+      
+      if (response.status >= 200 && response.status < 300) {
+        console.log('Messages marked as read successfully');
+        return response.data; // Return the response data, if needed
+      } else {
+        throw new Error(`Failed to mark messages as read. Status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+      throw error;
+    }
+  };

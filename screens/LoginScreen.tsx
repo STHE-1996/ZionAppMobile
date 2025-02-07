@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { loginUser } from '../services/apiService';
 // import { loginUser } from './services/apiService';  // import the login service
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (whatsappNumber === '' || password === '') {
       Alert.alert('Validation Error', 'Please enter both WhatsApp number and password');
       return;
     }
+    setLoading(true);
 
     try {
       const data = await loginUser(whatsappNumber, password);
@@ -23,11 +25,21 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       }
     } catch (error) {
       Alert.alert('Login Failed', 'Invalid credentials or server error');
+      setLoading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+       <View style={styles.card}>
       <Text style={styles.header}>Login</Text>
 
       <TextInput
@@ -53,9 +65,13 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Don't have an account?</Text>
-        <TouchableOpacity onPress={() => Alert.alert('Sign up page')}>
+        <TouchableOpacity onPress={() => {
+            // Navigate to RegisterScreen when clicked
+            navigation.navigate('RegisterScreen');
+          }}>
           <Text style={styles.footerLink}>Sign up here</Text>
         </TouchableOpacity>
+      </View>
       </View>
     </View>
   );
@@ -68,6 +84,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#F0F0F0',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    padding: 20,
+    backgroundColor: '#D0F8FF', // Light cyan to match your image
+    borderRadius: 20, // Softer rounded corners
+    borderWidth: 1,
+    borderColor: '#7FE7FD', // Border matching the theme
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   header: {
     fontSize: 30,

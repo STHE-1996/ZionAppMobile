@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-const API_URL = 'http://192.168.0.245:8082/api/Login';
+// const API_URL = 'http://192.168.0.245:8082/api/Login';
+const API_URL = 'https://zion-app-8bcc080006a7.herokuapp.com/api/Login';
 
 export const loginUser = async (whatsappNumber: string, password: string) => {
   try {
@@ -45,10 +46,45 @@ export const loginUser = async (whatsappNumber: string, password: string) => {
 
 export const getUsers = async () => {
   try {
-    const response = await axios.get('http://192.168.0.245:8082/api/filter');
+    const response = await axios.get('https://zion-app-8bcc080006a7.herokuapp.com/api/filter');
     return response.data; 
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
+  }
+};
+
+export const Province = async () => {
+  try {
+    const response = await axios.get('https://zion-app-8bcc080006a7.herokuapp.com/api/Provinces');
+    return response.data; 
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
+};
+
+export const ChurchNames = async () => {
+  try {
+    const response = await axios.get('https://zion-app-8bcc080006a7.herokuapp.com/api/ChurchNames');
+    return response.data; 
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
+};
+
+export const registerUser = async (registrationData: any) => {
+  console.log('register request :',registrationData)
+  try {
+    const response = await axios.post(`https://zion-app-8bcc080006a7.herokuapp.com/api/Registration`, registrationData, {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error registering user:', error);
+    throw error; 
   }
 };
