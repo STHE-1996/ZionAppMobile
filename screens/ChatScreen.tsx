@@ -4,6 +4,7 @@ import { UserDetails } from '../models/UserDetails';
 import { Message } from '../models/ChatMessage'; 
 import { getMessages, sendMessage } from '../services/chatServices'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BottomTabNavigator from './BottomTabNavigator';
 
 interface ChatScreenProps {
   route: any;
@@ -124,6 +125,7 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
           <Text style={styles.sendButtonText}>Send</Text>
         </TouchableOpacity>
       </View>
+      {/* <BottomTabNavigator /> */}
     </View>
   );
 };

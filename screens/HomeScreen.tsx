@@ -10,9 +10,9 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
     { id: 4, title: 'Cart', icon: 'shopping-cart', color: '#01ebff', size: 40 },
     { id: 5, title: 'Bell', icon: 'bell', color: '#01ebff', size: 50 },
     { id: 6, title: 'Pen', icon: 'pencil', color: '#01ebff', size: 40 },
-    // { id: 7, title: 'Music', icon: 'music', color: '#01ebff', size: 40 },
+    { id: 7, title: 'Music', icon: 'music', color: '#01ebff', size: 40 },
     { id: 8, title: 'Chat', icon: 'comment', color: '#01ebff', size: 40 },
-    { id: 9, title: 'Profile', icon: 'user-circle', color: '#01ebff', size: 50 } // Added Profile icon
+    { id: 9, title: 'Profile', icon: 'user-circle', color: '#01ebff', size: 50 }
 ];
 
   const showAlert = (title: string) => {
@@ -38,9 +38,9 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
             onPress={() => {
               // Navigate based on the title of the item
               if (item.title === 'Chat') {
-                navigation.navigate('RecentChatsScreen'); // Navigate to ChatScreen
+                navigation.navigate('RecentChatsScreen'); 
               } else if (item.title === 'User') {
-                navigation.navigate('UsersScreen'); // Navigate to UsersScreen
+                navigation.navigate('UsersScreen'); 
               } else if (item.title === 'Cart') {
                 navigation.navigate('ShopScreen');
               } else if (item.title === 'Profile') {
@@ -49,6 +49,8 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
                 navigation.navigate('NotificationScreen');
               } else if (item.title === 'Music') {
                 navigation.navigate('VerificationScreen');
+              } else if (item.title === 'Home') {
+                navigation.navigate('TimelineScreen');
               } else {
               }
             }}
@@ -58,9 +60,9 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
           </TouchableOpacity>
         )}
       />
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      {/* <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 };
@@ -80,7 +82,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   card: {
-    shadowColor: '#00000021',
+    // shadowColor: '#00000021',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.37,
     shadowRadius: 7.49,

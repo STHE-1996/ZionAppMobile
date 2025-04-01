@@ -92,7 +92,7 @@ const RegistrationScreen = ({ navigation }: { navigation: any }) => {
     try {
       const response = await registerUser(registrationData); // Call the registration API
       Alert.alert('Success', 'You have successfully registered!');
-      navigation.navigate('HomeScreen');
+      navigation.navigate('VerificationScreen');
     } catch (error) {
       Alert.alert('Error', 'Registration failed. Please try again later.');
     }
@@ -218,7 +218,10 @@ const RegistrationScreen = ({ navigation }: { navigation: any }) => {
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+            // Navigate to RegisterScreen when clicked
+            navigation.navigate('Login');
+          }}>
           <Text style={styles.loginText}>
             Already have an account? <Text style={styles.link}>Login</Text>
           </Text>

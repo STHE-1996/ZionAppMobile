@@ -1,28 +1,30 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // For navigation
+import { verifyAccount } from '../services/apiService';
 
-const VerificationScreen = () => {
+const VerificationScreen = ({ navigation }: { navigation: any }) => {
   const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState('');
-  const navigation = useNavigation(); // Use navigation hook
+  const [verificationMessage, setVerificationMessage] = useState('');
 
-//   const handleInputChange = (text) => {
-//     // Ensure only numbers are entered and limit to 5 digits
-//     if (text.length <= 5 && /^[0-9]*$/.test(text)) {
-//       setVerificationCode(text);
-//     }
-//   };
+  const handleInputChange = (text:string) => {
+    // Ensure only numbers are entered and limit to 5 digits
+    if (text.length <= 5 && /^[0-9]*$/.test(text)) {
+      setVerificationCode(text);
+    }
+  };
 
-//   const handleVerify = () => {
-//     // Example of verification check (you'd replace this with your actual verification logic)
-//     if (verificationCode === '12345') {
-//       // If verification is successful, navigate to the next screen
-//       navigation.navigate('NextScreen'); // Replace with your next screen name
-//     } else {
-//       setError('Invalid code. Please try again.');
-//     }
-//   };
+  const handleVerify = async () => {
+    try {
+      const message = await verifyAccount(verificationCode);
+      setVerificationMessage(message); 
+      navigation.navigate('Login');
+      setError('');  
+    } catch (err:any) {
+      setError(err.message); 
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -33,16 +35,15 @@ const VerificationScreen = () => {
         style={styles.input}
         placeholder="Enter 5-digit code"
         value={verificationCode}
-        // onChangeText={handleInputChange}
+        onChangeText={handleInputChange}
         keyboardType="numeric"
         maxLength={5}
       />
-
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button}  onPress={handleVerify}>
         <Text style={styles.buttonText}>Verify</Text>
       </TouchableOpacity>
+      {verificationMessage ? <Text>{verificationMessage}</Text> : null}
+      {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
     </View>
   );
 };

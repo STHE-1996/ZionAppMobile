@@ -9,10 +9,14 @@ export interface SocialMediaLinkModels {
   
   // Interface for Post Model
   export interface Post {
-    id: string;
-    content: string;
-    createdAt: string;
-    // Add other post fields as needed
+    postId: string;
+    userId: string;
+    title: string;
+    content: string; 
+    localDateTime: number[];  
+    postLikeModelList: string[]; 
+    comments: string | null;
+    user: UserDetails;
   }
   
   // Interface for Invitation Model
@@ -39,7 +43,7 @@ export interface SocialMediaLinkModels {
     password: string;
     loginStatus: boolean;
     socialMediaLinkModels: SocialMediaLinkModels;
-    postModelList: Post[]; // Assuming PostModel is another interface or type for posts
+    postModelList: Post[];
     weddingModelList: InvitationModel[];
     sentInvitation: InvitationModel[];
     whatsappNumber: string;

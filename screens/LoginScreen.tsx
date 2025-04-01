@@ -1,16 +1,30 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { Image,View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Button } from 'react-native';
 import { loginUser } from '../services/apiService';
+import Modal from 'react-native-modal';
+import FastImage from 'react-native-fast-image';
 // import { loginUser } from './services/apiService';  // import the login service
+import { WebView } from 'react-native-webview';
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [modalContent, setModalContent] = useState({ message: '', type: '' });
+  const showModal = () => {
+    setModalVisible(true);
+  };
+
+  const hideModal = () => {
+    setModalVisible(false);
+  };
 
   const handleLogin = async () => {
     if (whatsappNumber === '' || password === '') {
-      Alert.alert('Validation Error', 'Please enter both WhatsApp number and password');
+      setModalContent({ message: 'Please enter both WhatsApp number and password', type: 'error' });
+      showModal();
       return;
     }
     setLoading(true);
@@ -19,12 +33,13 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       const data = await loginUser(whatsappNumber, password);
       if (data) {
         // If the login is successful, you can navigate to the home screen
-        Alert.alert('Login Successful', `Welcome ${whatsappNumber}`);
-        // Example navigation to home screen after successful login
-        navigation.navigate('HomeScreen');
+        setModalContent({ message: `Login Successful! Welcome ${whatsappNumber}`, type: 'success' });
+        showModal();
+        navigation.navigate('Main');
       }
     } catch (error) {
-      Alert.alert('Login Failed', 'Invalid credentials or server error');
+      setModalContent({ message: 'Login Failed! Invalid credentials or server error', type: 'error' });
+      showModal();
       setLoading(false);
     }
   };
@@ -56,8 +71,17 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         placeholder="Enter your password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
+        secureTextEntry={!showPassword}
+        // secureTextEntry
       />
+      <View style={styles.row}>
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.checkboxContainer}
+                >
+                  <Text>{showPassword ? 'Hide' : 'Show'} password</Text>
+                </TouchableOpacity>
+              </View>
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
@@ -73,6 +97,38 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         </TouchableOpacity>
       </View>
       </View>
+      <Modal isVisible={isModalVisible} onBackdropPress={hideModal}>
+  <View style={styles.modalContent}>
+    <Text>{modalContent.message}</Text>
+
+    {modalContent.type === 'error' ? (
+      <WebView
+        originWhitelist={['*']}
+        source={{
+          uri: 'https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExMHU4MXBhaGt2aDFibzQyaHFjMmtnM2UwM283cGcwdHpkNTYxZ2t1ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9ZQ/hp3dmEypS0FaoyzWLR/giphy.gif',
+        }}
+        style={[styles.gif, { backgroundColor: 'transparent' }]} // Adding transparent background here
+        javaScriptEnabled={true} // This is optional, but helps to ensure everything is working in the WebView
+        domStorageEnabled={true} // Ensures better compatibility with media content
+      />
+    ) : null}
+
+    {modalContent.type === 'success' ? (
+      <WebView
+        originWhitelist={['*']}
+        source={{
+          uri: 'https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExejhkaHAxa2Z6bmh1MGszazZwbXNuNHJuZ2FqcDd4dml2Y2V4YWx5aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9ZQ/lRXY41yFFi9RfNXyPN/giphy.gif',
+        }}
+        style={[styles.gif, { backgroundColor: 'transparent' }]} // Adding transparent background here as well
+        javaScriptEnabled={true} // Optional
+        domStorageEnabled={true} // Optional
+      />
+    ) : null}
+    
+    <Button title="Close" onPress={hideModal} />
+  </View>
+</Modal>
+
     </View>
   );
 };
@@ -84,6 +140,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#F0F0F0',
+  },
+  modalContent: {
+    width: 360, // Set your desired width
+    height: 320, // Set your desired height (same as width for square shape)
+    backgroundColor: 'none',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 10, // Optional: for rounded corners
+  },
+  gif: {
+    width: 200,
+    height: 200,
+    marginTop: 20,
   },
   card: {
     width: '100%',
@@ -144,6 +214,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 5,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

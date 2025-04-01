@@ -28,7 +28,7 @@ const Users = ({ navigation }: { navigation: any }) => {
   }, []); // Empty dependency array to call it only once when the component mounts
 
   const clickEventListener = (user: UserDetails) => {
-    navigation.navigate('ChatScreen', { user });
+    navigation.navigate('Chats', { user });
   };
 
   const renderProfileImage = (profilePictureUrl: string) => {

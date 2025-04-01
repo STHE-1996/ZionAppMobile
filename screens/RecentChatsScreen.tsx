@@ -66,7 +66,7 @@ const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
       }
 
       // Navigate to ChatScreen with the selected user
-      navigation.navigate('ChatScreen', { user: user });
+      navigation.navigate('Chats', { user: user });
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
