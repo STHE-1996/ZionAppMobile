@@ -17,7 +17,7 @@ const BottomTabNavigator = () => {
           let icons = {
             Home: 'home', 
             Users: 'account-group',
-            Chats: 'message-text',
+            Recent: 'message-text',
             Profile: 'account-circle',
           };
           return <Icon name={icons[route.name]} size={size} color="#01ebff"/>;
@@ -29,7 +29,7 @@ const BottomTabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       {/* <Tab.Screen name="Users" component={UsersScreen} /> */}
-      <Tab.Screen name="Chats" component={RecentChatsScreen} />
+      <Tab.Screen name="Recent" component={RecentChatsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} /> 
     </Tab.Navigator>
   );

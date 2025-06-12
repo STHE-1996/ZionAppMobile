@@ -14,11 +14,26 @@ export interface SocialMediaLinkModels {
     title: string;
     content: string; 
     localDateTime: number[];  
-    postLikeModelList: string[]; 
-    comments: string | null;
+    postLikeModelList: PostLike[];
+    postHeartModelList : PostHeart[];
+    postIzibusisoModelList : PostIzibusiso[];
+    comments:  Comment[];
     user: UserDetails;
   }
   
+  export interface Comment {
+    id: string;
+    firstName: string;
+    secondName: string;
+    text: string;
+    profilePictureUrl?: string;
+    user: {
+      profilePictureUrl?: string;
+      firstName: string;
+      secondName: string;
+    };
+  };
+
   // Interface for Invitation Model
   export interface InvitationModel {
     invitationId: string;
@@ -49,3 +64,28 @@ export interface SocialMediaLinkModels {
     whatsappNumber: string;
   }
   
+  export interface PostLike {
+    PostLikeId : string;
+    userId : string;
+    firstName : string;
+    lastName: string;
+    profileUrl: string;
+}
+
+
+export interface PostHeart {
+ PostHeartId : string;
+ userId : string;
+ firstName : string;
+ lastName: string;
+ profileUrl: string;
+}
+
+
+export interface PostIzibusiso {
+ PostIzibusisoId : string;
+ userId : string;
+ firstName : string;
+ lastName: string;
+ profileUrl: string;
+}

@@ -45,7 +45,7 @@ const ListPosts = () => {
             return <View style={styles.separator} />
           }}
           keyExtractor={item => {
-            return item.id
+            return item.id.toString()
           }}
           renderItem={item => {
             const Notification = item.item

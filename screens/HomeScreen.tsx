@@ -6,17 +6,17 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
   const data = [
     { id: 1, title: 'Home', icon: 'home', color: '#01ebff', size: 40 },
     { id: 2, title: 'User', icon: 'user', color: '#01ebff', size: 50 },
-    { id: 3, title: 'Calendar', icon: 'calendar', color: '#01ebff', size: 50 },
-    { id: 4, title: 'Cart', icon: 'shopping-cart', color: '#01ebff', size: 40 },
+    { id: 3, title: 'Event', icon: 'calendar', color: '#01ebff', size: 50 },
+    { id: 4, title: 'E-commerce', icon: 'shopping-cart', color: '#01ebff', size: 40 },
     { id: 5, title: 'Bell', icon: 'bell', color: '#01ebff', size: 50 },
-    { id: 6, title: 'Pen', icon: 'pencil', color: '#01ebff', size: 40 },
+    { id: 6, title: 'Status', icon: 'pencil', color: '#01ebff', size: 40 },
     { id: 7, title: 'Music', icon: 'music', color: '#01ebff', size: 40 },
     { id: 8, title: 'Chat', icon: 'comment', color: '#01ebff', size: 40 },
     { id: 9, title: 'Profile', icon: 'user-circle', color: '#01ebff', size: 50 }
 ];
 
   const showAlert = (title: string) => {
-    Alert.alert(`${title} selected`);
+    Alert.alert(`${title} Comming soon`);
   };
 
   const handleLogout = () => {
@@ -38,20 +38,26 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
             onPress={() => {
               // Navigate based on the title of the item
               if (item.title === 'Chat') {
-                navigation.navigate('RecentChatsScreen'); 
+                navigation.navigate('Recent'); 
               } else if (item.title === 'User') {
                 navigation.navigate('UsersScreen'); 
-              } else if (item.title === 'Cart') {
-                navigation.navigate('ShopScreen');
+              } else if (item.title === 'E-commerce') {
+                // navigation.navigate('ShopScreen');
+                 showAlert(item.title);
               } else if (item.title === 'Profile') {
                 navigation.navigate('ProfileScreen');
               }else if (item.title === 'Bell') {
-                navigation.navigate('NotificationScreen');
+                // navigation.navigate('NotificationScreen');
+                 showAlert(item.title);
               } else if (item.title === 'Music') {
-                navigation.navigate('VerificationScreen');
+                // navigation.navigate('VerificationScreen');
+                showAlert(item.title);
               } else if (item.title === 'Home') {
                 navigation.navigate('TimelineScreen');
-              } else {
+              } else if (item.title === 'Status'){
+                showAlert(item.title);
+              } else if (item.title === 'Event'){
+                showAlert(item.title);
               }
             }}
           >

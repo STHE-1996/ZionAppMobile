@@ -28,13 +28,14 @@ const App = () => {
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
         <Stack.Screen name="Chats" component={ChatScreen} />
         <Stack.Screen name="UsersScreen" component={UsersScreen}/>
+        
 
         {/* Main Tab Navigator */}
         <Stack.Screen name="Main" component={BottomTabNavigator} options={{ headerShown: false }} />
         {/* Other Screens with Bottom Tab Visible */}
         <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
         
-        <Stack.Screen name="RecentChatsScreen" component={RecentChatsScreen} />
+        <Stack.Screen name="Recent" component={RecentChatsScreen} />
         
         <Stack.Screen name="ShopScreen" component={ShopScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />

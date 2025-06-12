@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, ActivityIndicator, Alert, Modal, Button } from "react-native";
 import Video from "react-native-video";
-import { postTimeLine, TimeLine, uploadImageTimeLine } from "../services/timeLimeServices";
-import { Post, UserDetails } from "../models/UserDetails";
+import { comment, heartPost, izibusisoPost, likePost, postTimeLine, TimeLine, uploadImageTimeLine } from "../services/timeLimeServices";
+import { Post, PostHeart, PostIzibusiso, PostLike, UserDetails } from "../models/UserDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from 'expo-image-picker'; 
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+
+import { faUser } from '@fortawesome/free-solid-svg-icons'; // Import the "fa-user" icon
 
 
 
@@ -18,6 +21,13 @@ import * as ImagePicker from 'expo-image-picker';
   const [activeTab, setActiveTab] = useState(1);
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activities, setActivities] = useState<{ [key: string]: string }>({});
+  const [commentInputs, setCommentInputs] = useState<{ [key: string]: string }>({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedReaction, setSelectedReaction] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<PostLike[] | PostHeart[] | PostIzibusiso[]>([]);
+ 
+
 
   const toggleComments = (postId: string) => {
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
@@ -99,7 +109,7 @@ import * as ImagePicker from 'expo-image-picker';
   };
   
 
-  // Method to handle form submission
+  
   const handleSubmit = async () => {
     if (!title || !image) {
       console.log(title, image);
@@ -109,17 +119,20 @@ import * as ImagePicker from 'expo-image-picker';
   
     try {
       console.log('Submitting form with:', title, image);
-  
-      // Create formData and append the image
+      const file = {
+           uri: image, // local file URI
+           type: 'image/jpeg',
+           name: 'image.jpg',
+      } as any;
+
       const formData = new FormData();
-      formData.append('file', {
-        uri: image, // URI of the image
-        type: 'image/jpeg', // You can change this based on your image type
-        name: 'image.jpg', // Provide a filename
-      });
+      formData.append('file', file);
   
-      // ID and title for the request
-      const id = '6617aa5a4b2c0461281c4ebe'; // Replace with your actual ID
+      
+      const id = await AsyncStorage.getItem('userId');
+      if (!id) {
+            throw new Error('User ID not found');
+      }
       const response = await uploadImageTimeLine(formData, id, title);
 
       console.log('your response is ', response);
@@ -133,6 +146,197 @@ import * as ImagePicker from 'expo-image-picker';
       Alert.alert('Error', 'There was an error submitting your form.');
     }
   };
+
+  
+  
+  const handleActivityChange = (postId: string, text: string) => {
+    setActivities((prevActivities) => ({ ...prevActivities, [postId]: text }));
+  };
+
+  const handleCommentChange = (postId: string, text: string) => {
+  setCommentInputs((prevInputs) => ({ ...prevInputs, [postId]: text }));
+};
+
+const handleReaction = (postId: string, type: string) => {
+  console.log(`Post ${postId} received a ${type} reaction`);
+  // You can extend this to call an API or update state.
+};
+
+
+
+  const handleSubmitComment = async (postId: string) => {
+
+    console.log('api triggeredcles')
+    const commentText = activities[postId]; 
+    const userId = await AsyncStorage.getItem('userId');
+
+    console.log('post id', postId);
+    console.log('comment', commentText);
+    console.log('user Id', userId);
+  
+    if (commentText && userId) {
+      try {
+        // Call the comment API
+        const response = await comment(commentText, userId, postId);
+        setTimeLine((prevTimeline) =>
+          prevTimeline.map((post) => {
+            if (post.postId === postId) {
+              return { 
+                ...post, 
+                comments: [...post.comments, response] 
+              }; 
+            }
+            return post;
+          })
+        );
+  
+        // Clear the comment input field
+        setCommentInputs((prevInputs) => ({ ...prevInputs, [postId]: '' }));
+      } catch (error) {
+        console.error('Error submitting comment:', error);
+        Alert.alert('Error', 'There was an error submitting your comment.');
+      }
+    } else {
+      Alert.alert('Error', 'Please provide a comment.');
+    }
+  };
+
+  
+  const handleReactionLike = async (postId: string, reactionType: string) => {
+    if (reactionType === 'like') {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        if (userId) {
+          const response = await likePost(userId, postId);
+          console.log(response);
+  
+          if (response.message === 'Post liked successfully!') {
+            const { likedPost } = response;
+  
+            // Update the specific post in the timeline state
+            setTimeLine(prevTimeline =>
+              prevTimeline.map(post =>
+                post.postId === postId
+                  ? {
+                      ...post,
+                      postLikeModelList: [
+                        ...(post.postLikeModelList || []),
+                        {
+                          PostLikeId: likedPost.postLikeId,
+                          userId: likedPost.userId,
+                          firstName: likedPost.firstName,
+                          lastName: likedPost.lastName,
+                          profileUrl: likedPost.profileUrl,
+                        },
+                      ],
+                    }
+                  : post
+              )
+            );
+          }
+        } else {
+          console.error('UserId not found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error liking the post:', error);
+      }
+    }
+  };
+  
+  const handleReactionHeart = async (postId: string, reactionType: string) => {
+    if (reactionType === 'love') {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        if (userId) {
+          const response = await heartPost(userId, postId);
+          console.log(response);
+  
+          if (response.message === 'Post hearted successfully!') {
+            const { heartedPost } = response;
+  
+            // Update the specific post in the timeline state
+            setTimeLine(prevTimeline =>
+              prevTimeline.map(post =>
+                post.postId === postId
+                  ? {
+                      ...post,
+                      postHeartModelList: [
+                        ...(post.postHeartModelList || []),
+                        {
+                          PostHeartId: heartedPost.postHeartId,
+                          userId: heartedPost.userId,
+                          firstName: heartedPost.firstName,
+                          lastName: heartedPost.lastName,
+                          profileUrl: heartedPost.profileUrl,
+                        },
+                      ],
+                    }
+                  : post
+              )
+            );
+          }
+        } else {
+          console.error('UserId not found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error hearting the post:', error);
+      }
+    }
+  };
+
+
+  const handleBadgeClick = (reactionType: string, usersList: PostLike[] | PostHeart[] | PostIzibusiso[]) => {
+    setSelectedReaction(reactionType); // Set the selected reaction type
+    setSelectedUsers(usersList); // Set the list of users who reacted with that reaction
+    setModalVisible(true); // Open the modal
+  };
+  
+  
+
+  const handleReactionIsizibusiso = async (postId: string, reactionType: string) => {
+    if (reactionType === 'laugh') {
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        if (userId) {
+          const response = await izibusisoPost(userId, postId);
+          console.log(response);
+  
+          if (response.message === 'Post izibusiso successfully!') {
+            const { izibusiso } = response;
+  
+            // Update the specific post in the timeline state
+            setTimeLine(prevTimeline =>
+              prevTimeline.map(post =>
+                post.postId === postId
+                  ? {
+                      ...post,
+                      postIzibusisoModelList: [
+                        ...(post.postIzibusisoModelList || []),
+                        {
+                          PostIzibusisoId: izibusiso.postIzibusisoId,
+                          userId: izibusiso.userId,
+                          firstName: izibusiso.firstName,
+                          lastName: izibusiso.lastName,
+                          profileUrl: izibusiso.profileUrl,
+                        },
+                      ],
+                    }
+                  : post
+              )
+            );
+          }
+        } else {
+          console.error('UserId not found in AsyncStorage');
+        }
+      } catch (error) {
+        console.error('Error izibusiso the post:', error);
+      }
+    }
+  };
+  
+  
+  
+  
     
     return (
       <View style={styles.container}>
@@ -150,11 +354,27 @@ import * as ImagePicker from 'expo-image-picker';
             <View style={styles.postContainer}>
               {/* User Info */}
               <View style={styles.userInfo}>
-                <Image source={{ uri: item.user.profilePictureUrl }} style={styles.profilePic} />
-                <View>
-                  <Text style={styles.userName}>{item.user.firstName} {item.user.secondName}</Text>
-                </View>
+                  {item.user.profilePictureUrl ? (
+                     <Image 
+                         source={{ uri: item.user.profilePictureUrl }} 
+                         style={styles.profilePic} 
+                     />
+               ) : (
+                <View style={styles.iconContainer}>
+                <FontAwesome 
+                  name="user" // FontAwesome icon name
+                  style={styles.icon} // Icon styling
+                />
               </View>
+             )}
+
+              <View>
+                <Text style={styles.userName}>
+                    {item.user.firstName} {item.user.secondName}
+                </Text>
+            </View>
+          </View>
+
     
               {/* Post Content */}
               <Text style={styles.content}>{item.title}</Text>
@@ -180,28 +400,113 @@ import * as ImagePicker from 'expo-image-picker';
                   <Text style={styles.mediaText}>{item.content}</Text>
                 )
               ) : null}
+               {/* Emoji Reactions */}
+             {/* Emoji Reactions with Badges */}
+             <View style={styles.reactionsContainer}>
+              <TouchableOpacity onPress={() => handleReactionLike(item.postId, 'like')}>
+                 <View style={styles.reactionBadgeWrapper}>
+                {/* Badge Above the Icon */}
+                     <TouchableOpacity onPress={() => handleBadgeClick('like', item?.postLikeModelList || [])}>
+                      {item?.postLikeModelList?.length > 0 ? (
+                     <View style={styles.badge}>
+                         <Text style={styles.badgeText}>{item.postLikeModelList.length}</Text>
+                     </View>
+                     ) : (
+                    <View style={styles.badge}>
+                       <Text style={styles.badgeText}>0</Text>
+                    </View>
+                    )}
+                   </TouchableOpacity>
+
+                   {/* Reaction Icon */}
+                   <Text style={styles.reaction}>👍</Text>
+                  </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleReactionHeart(item.postId, 'love')}>
+                   <View style={styles.reactionBadgeWrapper}>
+                   {/* Badge Above the Heart Icon */}
+              <TouchableOpacity onPress={() => handleBadgeClick('love', item?.postHeartModelList || [])}>
+              {item.postHeartModelList?.length > 0 ? (
+              <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{item.postHeartModelList?.length}</Text>
+              </View>
+              ) : (
+                <View style={styles.badge}>
+              <Text style={styles.badgeText}>0</Text>
+            </View>
+              )}
+             </TouchableOpacity>
     
+            {/* Heart Reaction Icon */}
+            <Text style={styles.reaction}>❤️</Text>
+             </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => handleReactionIsizibusiso(item.postId, 'laugh')}>
+                 <View style={styles.reactionBadgeWrapper}>
+                 {/* Badge Above the Prayer Icon */}
+            <TouchableOpacity onPress={() => handleBadgeClick('laugh', item?.postIzibusisoModelList || [])}>
+            {item.postIzibusisoModelList?.length > 0 ? (
+            <View style={styles.badge}>
+                 <Text style={styles.badgeText}>{item.postIzibusisoModelList?.length}</Text>
+            </View>
+            ) : (
+           <View style={styles.badge}>
+                <Text style={styles.badgeText}>0</Text>
+           </View>
+           )}
+           </TouchableOpacity>
+    
+           {/* Prayer Reaction Icon */}
+           <Text style={styles.reaction}>🙏</Text>
+               </View>
+             </TouchableOpacity>
+           </View>
+
+
               {/* Activity Feed */}
               <View style={styles.activityFeed}>
                 <TextInput
                   style={styles.input}
                   placeholder="Share what you've been up to..."
-                  value={activity}
-                  onChangeText={setActivity}
+                  value={activities[item.postId] || ''} 
+                onChangeText={(text) => handleActivityChange(item.postId, text)}
                 />
                 <TouchableOpacity style={styles.postButton}>
-                  <Text style={styles.postText}>Post</Text>
+                  <Text 
+                      style={styles.postText} 
+                      onPress={() => handleSubmitComment(item.postId)}>Post</Text>
                 </TouchableOpacity>
               </View>
     
               {/* Comments */}
-              {showComments[item.postId] &&
-                item.comments !== null && Array.isArray(item.comments) && item.comments.map((comment) => (
-                  <View key={comment.id} style={styles.comment}>
-                    <Text style={styles.commentUser}>{comment.user}</Text>
-                    <Text style={styles.commentText}>{comment.text}</Text>
-                  </View>
-                ))}
+              {showComments[item.postId] && 
+                  item.comments !== null && Array.isArray(item.comments) && 
+                  item.comments.map((comment) => (
+                       <View key={comment.id} style={styles.comment}>
+                            <View style={styles.userInfo}>
+                               {comment.user?.profilePictureUrl ? (
+                               <Image 
+                                  source={{ uri: comment.profilePictureUrl }} 
+                                  style={styles.profilePic} 
+                               />
+                             ) : (
+                           <View style={styles.iconContainer}>
+                         <FontAwesome 
+                              name="user" // FontAwesome icon name
+                              style={styles.icon} // Icon styling
+                           />
+                        </View>
+                      )}
+                    <View>
+                 <Text style={styles.commentUser}>{comment.firstName} {comment.secondName}</Text>
+                 <Text style={styles.commentText}>{comment.text}</Text>
+             </View>
+            </View>
+           </View>
+           ))
+           }
+
     
               {/* Show Comments Button */}
               <TouchableOpacity onPress={() => toggleComments(item.postId)} style={styles.showCommentsButton}>
@@ -277,6 +582,52 @@ import * as ImagePicker from 'expo-image-picker';
             </View>
           }
         />
+          <Modal
+             animationType="slide"
+             transparent={true}
+             visible={modalVisible}
+                 onRequestClose={() => setModalVisible(false)}
+            >
+             <View style={styles.modalBackground}>
+                 <View style={styles.modalContainer}>
+                       <Text style={styles.modalText}>
+                            Users who reacted with {selectedReaction}:
+                       </Text>
+
+               {/* Display users who reacted */}
+                    {selectedUsers.length > 0 ? (
+                         selectedUsers.map((user, index) => (
+                         <View key={index} style={styles.userDetail}>
+                         <View style={styles.userInfo}>
+                               {/* Display profile picture if available */}
+                             {user.profileUrl ? (
+                                 <Image
+                                      source={{ uri: user.profileUrl }}
+                                      style={styles.profilePic}
+                                 />
+                        ) : (
+                                <View style={styles.iconContainer}>
+                                    <FontAwesome
+                                          name="user" // FontAwesome icon name
+                                          style={styles.icon} // Icon styling
+                                     />
+                                </View>
+                         )}
+                      </View>
+                    {/* User's name */}
+                      <Text style={styles.userName}>
+                             {user.firstName} {user.lastName}
+                      </Text>
+                   </View>
+                   ))
+                   ) : (
+                     <Text>No users reacted yet.</Text>
+                   )}
+
+                   <Button title="Close" onPress={() => setModalVisible(false)} />
+                   </View>
+               </View>
+           </Modal>
       </View>
     );
   };
@@ -291,6 +642,7 @@ const styles = StyleSheet.create({
   postContainer: {
     backgroundColor: "#D0F8FF",
     borderColor: "#7FE7FD",
+     borderWidth: 2,   
     padding: 10,
     borderRadius: 10,
     marginBottom: 15,
@@ -298,7 +650,7 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10, // Add space between tabs and content
+    marginBottom: 10, 
   },
   tabContent: {
     marginTop: 20,
@@ -319,6 +671,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20, 
+    marginRight: 10,
+    backgroundColor: '#f0f0f0', 
+    justifyContent: 'center',
+    alignItems: 'center', 
+  },
+  icon: {
+    color: '#01ebff', 
+    fontSize: 25,
+    paddingBottom: 50,
+  },
   userName: {
     fontWeight: "bold",
     fontSize: 16,
@@ -337,7 +703,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#01ebff',
-    padding: 10,
+  
   },
   submitText: {
     color: 'white',
@@ -354,6 +720,11 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 10,
     borderRadius: 10,
+  },
+  userDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   input: {
     backgroundColor: "#FFFFFF",
@@ -395,7 +766,6 @@ const styles = StyleSheet.create({
   stickyContainer: {
     padding: 10,
     backgroundColor: '#fff',
-    // Optionally, add a shadow or border to distinguish the sticky container
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
@@ -451,6 +821,50 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center', 
   },
+  reactionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  
+  reactionBadgeWrapper: {
+    alignItems: 'center',  
+    justifyContent: 'center', 
+  },
+  
+  reaction: {
+    fontSize: 30,
+  },
+  
+  badge: {
+    backgroundColor: '#f0f0f0',
+    padding: 5,
+    borderRadius: 15,
+    marginBottom: 5, 
+  },
+  badgeText: {
+    fontSize: 14,
+    color: 'black',
+  },
+  
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: 300,
+    alignItems: 'center',
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
+  },
 });
 
 export default TimelineScreen;
@@ -459,7 +873,7 @@ function getImageBlob(image: string) {
 }
 
 function launchImageLibrary(arg0: {
-  mediaType: string; // Only allow picking photos
+  mediaType: string;
   quality: number;
 }, arg1: (response: any) => void) {
   throw new Error("Function not implemented.");

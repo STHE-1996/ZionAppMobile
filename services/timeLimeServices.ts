@@ -42,3 +42,83 @@ export const uploadImageTimeLine = async (formData: FormData, id: string, title:
     throw error;
   }
 };
+
+
+export const comment = async (comment: string, userId: string, postId: string) => {
+
+  console.log('ID :', userId);
+  console.log('postId :', postId);
+  console.log('comment :', comment);
+  try {
+    const requestBody = {
+      comment: comment,
+      userId: userId,
+    };
+
+    const response = await axios.post(
+      `https://zion-app-8bcc080006a7.herokuapp.com/api/posts/${postId}/comments`,
+      requestBody,
+      {
+        headers: {
+          'Content-Type': 'application/json', 
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Error adding comment to post:', error);
+    throw error;
+  }
+};
+
+
+export const likePost = async (userId : string, postId: string) => {
+  try {
+    // const response = await axios.post(`https://zion-app-8bcc080006a7.herokuapp.com/api/likePost`, null, {
+      const response = await axios.post(`http://192.168.0.245:8082/api/likePost`, null, {
+      params: {
+        userId: userId,
+        postId: postId,
+      },
+    });
+    return response.data; // Assuming it returns the updated data.
+  } catch (error) {
+    console.error('Error liking the post:', error);
+    throw error; // You can handle the error as needed.
+  }
+};
+
+export const heartPost = async (userId : string, postId: string) => {
+  try {
+    const response = await axios.post(`https://zion-app-8bcc080006a7.herokuapp.com/api/heartPost`, null, {
+      // const response = await axios.post(`http://192.168.0.245:8082/api/heartPost`, null, {
+      params: {
+        userId: userId,
+        postId: postId,
+      },
+    });
+    return response.data; // Assuming it returns the updated data.
+  } catch (error) {
+    console.error('Error hearting the post:', error);
+    throw error; // You can handle the error as needed.
+  }
+};
+
+export const izibusisoPost = async (userId : string, postId: string) => {
+  try {
+    const response = await axios.post(`https://zion-app-8bcc080006a7.herokuapp.com/api/izibusisoPost`, null, {
+      // const response = await axios.post(`http://192.168.0.245:8082/api/izibusisoPost`, null, {
+      params: {
+        userId: userId,
+        postId: postId,
+      },
+    });
+    return response.data; // Assuming it returns the updated data.
+  } catch (error) {
+    console.error('Error izibusiso the post:', error);
+    throw error; // You can handle the error as needed.
+  }
+};
+
+

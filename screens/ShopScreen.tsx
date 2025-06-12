@@ -76,7 +76,7 @@ const ShopScreen = () => {
         horizontal={false}
         numColumns={2}
         keyExtractor={item => {
-          return item.id
+          return item.id.toString()
         }}
         ItemSeparatorComponent={() => {
           return <View style={styles.separator} />

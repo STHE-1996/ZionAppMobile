@@ -2,14 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator, FlatList, Modal, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Post, UserDetails } from '../models/UserDetails';
+import { UserDetails } from '../models/UserDetails';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { Card, Button, Avatar } from 'react-native-paper';
 import { getChurchMembers, getUsers } from '../services/apiService';
-import { uploadImageTimeLine } from '../services/timeLimeServices';
-import * as ImagePicker from 'expo-image-picker'; 
-import { deletePost, uploadProfilePicture } from '../services/profileService';
-
 
 const FirstTab = () => (
   <View style={[styles.tabContent, { backgroundColor: '#ff4081' }]}>
@@ -30,7 +26,7 @@ const ThirdTab = () => (
 );
 
 
-const ProfileScreen = () => {
+const ViewProfileScreen = () => {
   const data = [
     {
       id: 1,
@@ -106,55 +102,6 @@ const ProfileScreen = () => {
     { key: 'second', title: 'Second' },
     { key: 'third', title: 'Third' },
   ]);
-  const [uploading, setUploading] = useState(false);
-   const [profilePicture, setProfilePicture] = useState<Post[]>([]);
-   const [image, setImage] = useState<string | null>(null);
-    const [title, setTitle] = useState(''); 
-   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-   const [menuVisible, setMenuVisible] = useState<string | null>(null);
-
-
-  const toggleMenu = (postId: string) => {
-  setMenuVisible(menuVisible === postId ? null : postId);
-};
-
-    
-   const handleDelete = (userId: string, postId: string) => {
-  setMenuVisible(null);
-
-  Alert.alert(
-    'Delete Post',
-    'Are you sure you want to delete this post?',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          const success = await deletePost(userId, postId);
-
-          if (success) {
-            // Remove from local state to update UI
-            setUserDetails(prev => {
-              if (!prev) return prev;
-
-              return {
-                ...prev,
-                postModelList: prev.postModelList.filter(post => post.postId !== postId),
-              };
-            });
-
-            console.log('Post deleted and UI updated');
-          } else {
-            Alert.alert('Error', 'Failed to delete post');
-          }
-        },
-      },
-    ]
-  );
-};
-
-
 
   const renderScene = SceneMap({
     first: FirstTab,
@@ -218,52 +165,14 @@ const ProfileScreen = () => {
     );
   }
 
-
-  const pickImage = async (userId: any, setImage: (arg0: string) => void, setUserDetails: (arg0: (prev: any) => any) => void) => {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert('Permission to access the camera roll is required!');
-    return;
-  }
-
-  let result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    quality: 1,
-  });
-
-  if (!result.canceled && result.assets && result.assets.length > 0) {
-    const uri = result.assets[0].uri;
-    setImage(uri);
-
-    try {
-      const uploadResponse = await uploadProfilePicture(uri, userId);
-      // Assuming the server returns the new URL
-      setUserDetails((prev: any) => ({
-        ...prev,
-        profilePictureUrl: uploadResponse.newProfilePictureUrl || uri,
-      }));
-    } catch (err) {
-      Alert.alert('Upload failed', 'There was an issue uploading the image.');
-    }
-  }
-};
-
-const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
-    setSelectedImage(imageUri);
-    setModalVisible(true);
-  };
-
   return (
     <View style={styles.container}>
        <View style={styles.card}>
       <View style={styles.avatarContainer}>
-        <TouchableOpacity onPress={() => pickImage(userDetails.id, setImage, setUserDetails)}>
-            <Image
-                  source={{ uri: userDetails.profilePictureUrl || 'https://www.bootdey.com/img/Content/avatar/avatar6.png' }}
-                  style={styles.avatar}
-             />
-        </TouchableOpacity>
+        <Image
+          source={{ uri: userDetails.profilePictureUrl || 'https://www.bootdey.com/img/Content/avatar/avatar6.png' }}
+          style={styles.avatar}
+        />
         <Text style={styles.name}>
           {userDetails.firstName} {userDetails.secondName}
         </Text>
@@ -288,13 +197,13 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
         >
           Posts
         </Button>
-        {/* <Button 
+        <Button 
           mode={activeTab === 'Invite' ? 'contained' : 'text'} 
           onPress={() => setActiveTab('Invite')} 
           style={activeTab === 'Invite' ? styles.activeNavButton : styles.navButton}
         >
           Invite
-        </Button> */}
+        </Button>
         <Button 
           mode={activeTab === 'Church' ? 'contained' : 'text'} 
           onPress={() => setActiveTab('Church')} 
@@ -332,29 +241,20 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
       renderItem={post => {
         const item = post.item
         return (
-         <TouchableOpacity style={styles.card3} onPress={() => handleImagePress(item.content)}>
-      <View style={styles.imageContainer}>
-        <Image style={styles.cardImage} source={{ uri: item.content }} />
-        <TouchableOpacity style={styles.menuIcon} onPress={() => toggleMenu(item.postId)}>
-          <Text style={styles.dots}>⋮</Text>
-        </TouchableOpacity>
-        {menuVisible === item.postId && (
-          <View style={styles.menu}>
-            <TouchableOpacity onPress={() => handleDelete(userDetails.id, item.postId)}>
-              <Text style={styles.menuItem}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.title}>{item.title}</Text>
-      </View>
-    </TouchableOpacity>
+          <TouchableOpacity style={styles.card3}>
+            <View style={styles.imageContainer}>
+              <Image style={styles.cardImage} source={{ uri: item.content }} />
+            </View>
+            <View style={styles.cardContent}>
+              <Text style={styles.title}>{item.title}</Text>
+              {/* <Text style={styles.count}>({item} Photos)</Text> */}
+            </View>
+          </TouchableOpacity>
         )
       }}
     />
     )}
-    {/* {activeTab === 'Invite' && (
+    {activeTab === 'Invite' && (
       <FlatList
       style={styles.list}
       contentContainerStyle={styles.listContainer}
@@ -362,7 +262,7 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
       horizontal={false}
       numColumns={2}
       keyExtractor={item => {
-        return item.id
+        return item.id.toString()
       }}
       ItemSeparatorComponent={() => {
         return <View style={styles.separator} />
@@ -382,7 +282,7 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
         )
       }}
     />
-    )} */}
+    )}
     {activeTab === 'Church' && (
           <FlatList
             style={styles.userList}
@@ -392,7 +292,7 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
               <TouchableOpacity style={styles.card2}>
                 <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
                 <View style={styles.cardContent}>
-                  <Text style={styles.name}>{item.firstName} {item.secondName}</Text>
+                  <Text style={styles.name}>{item.firstName}</Text>
                   <Text style={styles.position}>{item.churchName}</Text>
                   <TouchableOpacity style={styles.followButton}>
                     <Text style={styles.followButtonText}>Follow</Text>
@@ -403,16 +303,6 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
           />
         )}
       </View>
-       {/* Image Preview Modal */}
-      <Modal visible={modalVisible} transparent={true} animationType="fade">
-        <View style={styles.modalBackground}>
-          <TouchableOpacity style={styles.modalContainer} onPress={() => setModalVisible(false)}>
-            {selectedImage && (
-              <Image style={styles.fullImage} source={{ uri: selectedImage }} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </Modal>
     </View>
   
       // </View>
@@ -443,20 +333,20 @@ const styles = StyleSheet.create({
   card2: {
     shadowColor: '#00000021',
     shadowOffset: {
-      width: 6,
+      width: 0,
       height: 6,
     },
     shadowOpacity: 0.37,
     shadowRadius: 7.49,
     elevation: 12,
-    marginVertical: 10,   
-    backgroundColor: '#D0F8FF',
-    borderColor: '#7FE7FD',  
-     borderWidth: 2,    
-    padding: 10,          
-    flexDirection: 'row',  
-    borderRadius: 10,    
-    width: '100%',        
+    
+    marginVertical: 10,   // Vertical margin between cards
+    marginHorizontal: 20, // Horizontal margin for spacing between cards
+    backgroundColor: 'white',
+    padding: 10,          // Padding inside the card
+    flexDirection: 'row',  // Aligns the image and text horizontally
+    borderRadius: 10,     // Optional, to make the card's corners rounded
+    width: '100%',        // Ensures the card takes the full width of the parent
   },
   
   activeNavButton: {
@@ -613,12 +503,9 @@ const styles = StyleSheet.create({
   /******** card **************/
   card3: {
     marginVertical: 8,
-    // backgroundColor: 'white',
+    backgroundColor: 'white',
     flexBasis: '45%',
     marginHorizontal: 10,
-    backgroundColor: '#D0F8FF',
-    borderColor: '#7FE7FD',  
-     borderWidth: 2,
   },
   cardContent: {
     paddingVertical: 17,
@@ -652,57 +539,6 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#B0C4DE',
   },
-  modalBackground: {
-  flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.8)',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-modalContainer: {
-  width: '100%',
-  height: '100%',
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-fullImage: {
-  width: '90%',
-  height: '70%',
-  resizeMode: 'contain',
-},
-menuIcon: {
-  position: 'absolute',
-  top: 5,
-  right: 5,
-  zIndex: 2,
-  padding: 5,
-},
-
-dots: {
-  fontSize: 20,
-  color: '#333',
-},
-
-menu: {
-  position: 'absolute',
-  top: 30,
-  right: 5,
-  backgroundColor: '#fff',
-  padding: 10,
-  borderRadius: 5,
-  elevation: 5,
-  zIndex: 3,
-},
-
-menuItem: {
-  fontSize: 14,
-  color: 'red',
-},
-
-
 });
 
-export default ProfileScreen;
-function launchImageLibrary(arg0: { mediaType: string; }, arg1: (response: { didCancel: any; errorCode: any; errorMessage: string | undefined; assets: any[]; }) => Promise<void>) {
-  throw new Error('Function not implemented.');
-}
-
+export default ViewProfileScreen;
