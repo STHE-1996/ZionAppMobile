@@ -90,11 +90,18 @@ const Users = ({ navigation }: { navigation: any }) => {
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={styles.name}>{`${item.firstName} ${item.secondName}`}</Text>
                   <Text style={styles.position}>{item.churchType}</Text>
-                  <TouchableOpacity
-                    style={styles.followButton}
-                    onPress={() => clickEventListener(item)}>
-                    <Text style={styles.followButtonText}>Chats</Text>
-                  </TouchableOpacity>
+                  <View style={styles.buttonRow}>
+                     <TouchableOpacity
+                          style={styles.followButton}
+                          onPress={() => clickEventListener(item)}>
+                         <Text style={styles.followButtonText}>Chats</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                         style={[styles.followButton, { marginLeft: 10 }]} // spacing between buttons
+                         onPress={() => navigation.navigate('View', { userId: item.id })}>
+                         <Text style={styles.followButtonText}>View</Text>
+                      </TouchableOpacity>
+                   </View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -192,7 +199,7 @@ const styles = StyleSheet.create({
   followButton: {
     marginTop: 10,
     height: 35,
-    width: 100,
+    width: 80,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -201,12 +208,18 @@ const styles = StyleSheet.create({
   },
   followButtonText: {
     color: '#FFFFFF',
-    fontSize: 20,
+    fontSize: 10,
   },
   icon: {
     height: 20,
     width: 20,
   },
+  buttonRow: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 10,
+},
 });
 
 export default Users;

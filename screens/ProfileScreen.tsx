@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator, FlatList, Modal, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +9,7 @@ import { getChurchMembers, getUsers } from '../services/apiService';
 import { uploadImageTimeLine } from '../services/timeLimeServices';
 import * as ImagePicker from 'expo-image-picker'; 
 import { deletePost, uploadProfilePicture } from '../services/profileService';
+import { Modalize } from 'react-native-modalize';
 
 
 const FirstTab = () => (
@@ -112,11 +113,19 @@ const ProfileScreen = () => {
     const [title, setTitle] = useState(''); 
    const [selectedImage, setSelectedImage] = useState<string | null>(null);
    const [menuVisible, setMenuVisible] = useState<string | null>(null);
+   const modalizeRef = useRef<Modalize>(null);
+    const churchModalRef = useRef<Modalize>(null);
 
 
   const toggleMenu = (postId: string) => {
   setMenuVisible(menuVisible === postId ? null : postId);
 };
+
+const openSheet = () => {
+  console.log('Modalize ref:', modalizeRef.current);
+  modalizeRef.current?.open();
+};
+
 
     
    const handleDelete = (userId: string, postId: string) => {
@@ -254,9 +263,14 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
     setModalVisible(true);
   };
 
+  const openChurchDrawer = () => {
+  churchModalRef.current?.open();
+};
+
   return (
     <View style={styles.container}>
        <View style={styles.card}>
+
       <View style={styles.avatarContainer}>
         <TouchableOpacity onPress={() => pickImage(userDetails.id, setImage, setUserDetails)}>
             <Image
@@ -281,26 +295,20 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
       </View>
       {/* Render Social Media Links */}
       <View style={styles.navContainer}>
-        <Button 
-          mode={activeTab === 'Posts' ? 'contained' : 'text'} 
-          onPress={() => setActiveTab('Posts')} 
-          style={activeTab === 'Posts' ? styles.activeNavButton : styles.navButton}
+       <Button
+           mode="contained"
+           onPress={() => openSheet()}
+           style={styles.navButton}
         >
-          Posts
+         Posts
         </Button>
-        {/* <Button 
-          mode={activeTab === 'Invite' ? 'contained' : 'text'} 
-          onPress={() => setActiveTab('Invite')} 
-          style={activeTab === 'Invite' ? styles.activeNavButton : styles.navButton}
+
+        <Button
+          mode="contained"
+          onPress={openChurchDrawer}
+          style={styles.navButton}
         >
-          Invite
-        </Button> */}
-        <Button 
-          mode={activeTab === 'Church' ? 'contained' : 'text'} 
-          onPress={() => setActiveTab('Church')} 
-          style={activeTab === 'Church' ? styles.activeNavButton : styles.navButton}
-        >
-          Church
+        Church
         </Button>
       </View>
 
@@ -311,49 +319,64 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
       initialLayout={{ width: 400, height: 600 }}
     />
     </View> 
+
+      <View style={[styles.card, { marginTop: 20 }]}>
+        <View style={styles.table}>
+           <View style={styles.tableRow}>
+                 <Text style={styles.tableLabel}>Province</Text>
+                 <Text style={styles.tableValue}>{userDetails.province || 'N/A'}</Text>
+           </View>
+           <View style={styles.tableRow}>
+                 <Text style={styles.tableLabel}>Language</Text>
+                 {/* <Text style={styles.tableValue}>{ || 'N/A'}</Text> */}
+           </View>
+        </View>
+      </View>
+ 
     
 
       {/* Conditional Rendering Based on Active Tab */}
-      <View style={styles.contentContainer}>
+      
   {/* <View style={styles.card}> */}
-    {activeTab === 'Posts' && userDetails?.postModelList &&(
-      <FlatList
-      style={styles.list}
-      contentContainerStyle={styles.listContainer2}
-      data={userDetails.postModelList}
-      horizontal={false}
-      numColumns={2}
-      keyExtractor={item => {
-        return item.postId
-      }}
-      ItemSeparatorComponent={() => {
-        return <View style={styles.separator} />
-      }}
-      renderItem={post => {
-        const item = post.item
-        return (
-         <TouchableOpacity style={styles.card3} onPress={() => handleImagePress(item.content)}>
-      <View style={styles.imageContainer}>
-        <Image style={styles.cardImage} source={{ uri: item.content }} />
-        <TouchableOpacity style={styles.menuIcon} onPress={() => toggleMenu(item.postId)}>
-          <Text style={styles.dots}>⋮</Text>
-        </TouchableOpacity>
-        {menuVisible === item.postId && (
-          <View style={styles.menu}>
-            <TouchableOpacity onPress={() => handleDelete(userDetails.id, item.postId)}>
-              <Text style={styles.menuItem}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.title}>{item.title}</Text>
-      </View>
-    </TouchableOpacity>
-        )
-      }}
-    />
-    )}
+    <Modalize
+  ref={modalizeRef}
+  snapPoint={500}
+  flatListProps={{
+    data: userDetails?.postModelList || [],
+    numColumns: 2,
+    keyExtractor: (item) => item.postId,
+    contentContainerStyle: styles.listContainer2,
+    ItemSeparatorComponent: () => <View style={styles.separator} />,
+    renderItem: ({ item }) => (
+      <TouchableOpacity
+      style={styles.card3}
+      onPress={() => handleImagePress(item.content)}
+    >
+        <View style={styles.imageContainer}>
+          <Image style={styles.cardImage} source={{ uri: item.content }} />
+          <TouchableOpacity style={styles.menuIcon} onPress={() => toggleMenu(item.postId)}>
+            <Text style={styles.dots}>⋮</Text>
+          </TouchableOpacity>
+          {menuVisible === item.postId && (
+            <View style={styles.menu}>
+              <TouchableOpacity onPress={() => handleDelete(userDetails.id, item.postId)}>
+                <Text style={styles.menuItem}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+        <View style={styles.cardContent}>
+          <Text style={styles.title}>{item.title}</Text>
+        </View>
+      </TouchableOpacity>
+    ),
+  }}
+/>
+
+        
+      
+    
+ 
     {/* {activeTab === 'Invite' && (
       <FlatList
       style={styles.list}
@@ -383,27 +406,26 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
       }}
     />
     )} */}
-    {activeTab === 'Church' && (
-          <FlatList
-            style={styles.userList}
-            data={churchMembers} // Passing the hardcoded users data
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.card2}>
-                <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
-                <View style={styles.cardContent}>
-                  <Text style={styles.name}>{item.firstName} {item.secondName}</Text>
-                  <Text style={styles.position}>{item.churchName}</Text>
-                  <TouchableOpacity style={styles.followButton}>
-                    <Text style={styles.followButtonText}>Follow</Text>
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-      </View>
-       {/* Image Preview Modal */}
+    <Modalize
+  ref={churchModalRef}
+  snapPoint={500}
+  flatListProps={{
+    data: churchMembers || [],
+    keyExtractor: (item) => item.id.toString(),
+    renderItem: ({ item }) => (
+      <TouchableOpacity style={styles.card2}>
+        <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
+        <View style={styles.cardContent}>
+          <Text style={styles.name}>{item.firstName} {item.secondName}</Text>
+          <Text style={styles.position}>{item.churchName}</Text>
+          
+        </View>
+      </TouchableOpacity>
+    )
+  }}
+/>
+
+      {/* Image Preview Modal */}
       <Modal visible={modalVisible} transparent={true} animationType="fade">
         <View style={styles.modalBackground}>
           <TouchableOpacity style={styles.modalContainer} onPress={() => setModalVisible(false)}>
@@ -414,9 +436,10 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
         </View>
       </Modal>
     </View>
-  
-      // </View>
-    )}
+    
+    
+  );
+};
 
 
 
@@ -439,6 +462,8 @@ const styles = StyleSheet.create({
   },
   navButton: {
     marginHorizontal: 5,
+    backgroundColor: '#01ebff',
+    color: '#fff',
   },
   card2: {
     shadowColor: '#00000021',
@@ -455,8 +480,8 @@ const styles = StyleSheet.create({
      borderWidth: 2,    
     padding: 10,          
     flexDirection: 'row',  
-    borderRadius: 10,    
-    width: '100%',        
+    borderRadius: 10,     
+    marginHorizontal: 15,       
   },
   
   activeNavButton: {
@@ -698,6 +723,33 @@ menuItem: {
   color: 'red',
 },
 
+table: {
+  marginTop: 10,
+  borderWidth: 1,
+  borderColor: '#ccc',
+  borderRadius: 8,
+  overflow: 'hidden',
+},
+
+tableRow: {
+  flexDirection: 'row',
+  paddingVertical: 10,
+  paddingHorizontal: 15,
+  borderBottomWidth: 1,
+  borderBottomColor: '#eee',
+  backgroundColor: '#fff',
+},
+
+tableLabel: {
+  flex: 1,
+  fontWeight: 'bold',
+  color: '#333',
+},
+
+tableValue: {
+  flex: 2,
+  color: '#555',
+},
 
 });
 

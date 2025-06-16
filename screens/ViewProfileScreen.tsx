@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator, FlatList, Modal, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,6 +6,7 @@ import { UserDetails } from '../models/UserDetails';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { Card, Button, Avatar } from 'react-native-paper';
 import { getChurchMembers, getUsers } from '../services/apiService';
+import { Modalize } from 'react-native-modalize';
 
 const FirstTab = () => (
   <View style={[styles.tabContent, { backgroundColor: '#ff4081' }]}>
@@ -25,8 +26,11 @@ const ThirdTab = () => (
   </View>
 );
 
+  interface ViewScreenProps {
+  route: any;
+}
 
-const ViewProfileScreen = () => {
+const ViewProfileScreen = ({ route }: ViewScreenProps) => {
   const data = [
     {
       id: 1,
@@ -102,6 +106,10 @@ const ViewProfileScreen = () => {
     { key: 'second', title: 'Second' },
     { key: 'third', title: 'Third' },
   ]);
+  const { userId } = route.params; 
+  const modalizeRef = useRef<Modalize>(null);
+  const churchModalRef = useRef<Modalize>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const renderScene = SceneMap({
     first: FirstTab,
@@ -110,14 +118,15 @@ const ViewProfileScreen = () => {
   });
 
 
+
+
   useEffect(() => {
     const fetchChurchMembers = async () => {
       try {
-        const senderId = await AsyncStorage.getItem('userId');
-        if (senderId) {
-        const data = await getChurchMembers(senderId);
+        
+        const data = await getChurchMembers(userId);
         setChurchMembers(data); 
-        }
+        
       } catch (error) {
         Alert.alert('Error', 'Failed to load church members');
       } finally {
@@ -130,14 +139,11 @@ const ViewProfileScreen = () => {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const senderId = await AsyncStorage.getItem('userId');
-        if (senderId) {
-          
           // const response = await axios.get(`http://192.168.0.245:8082/api/UserProfile/${senderId}`);
-          const response = await axios.get(`https://zion-app-8bcc080006a7.herokuapp.com/api/UserProfile/${senderId}`);
+          const response = await axios.get(`https://zion-app-8bcc080006a7.herokuapp.com/api/UserProfile/${userId}`);
           setUserDetails(response.data);
           console.log(response.data)
-        }
+        
       } catch (error) {
         console.error('Error fetching user details:', error);
       } finally {
@@ -165,380 +171,497 @@ const ViewProfileScreen = () => {
     );
   }
 
-  return (
-    <View style={styles.container}>
-       <View style={styles.card}>
-      <View style={styles.avatarContainer}>
-        <Image
-          source={{ uri: userDetails.profilePictureUrl || 'https://www.bootdey.com/img/Content/avatar/avatar6.png' }}
-          style={styles.avatar}
-        />
-        <Text style={styles.name}>
-          {userDetails.firstName} {userDetails.secondName}
-        </Text>
-        <Text style={styles.name}>
-          {userDetails.username} 
-        </Text>
-      </View>
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoLabel}>Email:</Text>
-        <Text style={styles.infoValue}>{userDetails.email}</Text>
-      </View>
-      <View style={styles.infoContainer}>
-        <Text style={styles.infoLabel}>Church:</Text>
-        <Text style={styles.infoValue}>{userDetails.churchName}</Text>
-      </View>
-      {/* Render Social Media Links */}
-      <View style={styles.navContainer}>
-        <Button 
-          mode={activeTab === 'Posts' ? 'contained' : 'text'} 
-          onPress={() => setActiveTab('Posts')} 
-          style={activeTab === 'Posts' ? styles.activeNavButton : styles.navButton}
-        >
-          Posts
-        </Button>
-        <Button 
-          mode={activeTab === 'Invite' ? 'contained' : 'text'} 
-          onPress={() => setActiveTab('Invite')} 
-          style={activeTab === 'Invite' ? styles.activeNavButton : styles.navButton}
-        >
-          Invite
-        </Button>
-        <Button 
-          mode={activeTab === 'Church' ? 'contained' : 'text'} 
-          onPress={() => setActiveTab('Church')} 
-          style={activeTab === 'Church' ? styles.activeNavButton : styles.navButton}
-        >
-          Church
-        </Button>
-      </View>
+  const openSheet = () => {
+  console.log('Modalize ref:', modalizeRef.current);
+  modalizeRef.current?.open();
+};
 
-      <TabView
-      navigationState={{ index, routes }}
-      renderScene={renderScene}
-      onIndexChange={setIndex}
-      initialLayout={{ width: 400, height: 600 }}
-    />
-    </View> 
-    
+ const openChurchDrawer = () => {
+  churchModalRef.current?.open();
+};
 
-      {/* Conditional Rendering Based on Active Tab */}
-      <View style={styles.contentContainer}>
-  {/* <View style={styles.card}> */}
-    {activeTab === 'Posts' && userDetails?.postModelList &&(
-      <FlatList
-      style={styles.list}
-      contentContainerStyle={styles.listContainer2}
-      data={userDetails.postModelList}
-      horizontal={false}
-      numColumns={2}
-      keyExtractor={item => {
-        return item.postId
-      }}
-      ItemSeparatorComponent={() => {
-        return <View style={styles.separator} />
-      }}
-      renderItem={post => {
-        const item = post.item
-        return (
-          <TouchableOpacity style={styles.card3}>
-            <View style={styles.imageContainer}>
-              <Image style={styles.cardImage} source={{ uri: item.content }} />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.title}>{item.title}</Text>
-              {/* <Text style={styles.count}>({item} Photos)</Text> */}
-            </View>
-          </TouchableOpacity>
-        )
-      }}
-    />
-    )}
-    {activeTab === 'Invite' && (
-      <FlatList
-      style={styles.list}
-      contentContainerStyle={styles.listContainer}
-      data={results}
-      horizontal={false}
-      numColumns={2}
-      keyExtractor={item => {
-        return item.id.toString()
-      }}
-      ItemSeparatorComponent={() => {
-        return <View style={styles.separator} />
-      }}
-      renderItem={post => {
-        const item = post.item
-        return (
-          <TouchableOpacity style={styles.card}>
-            <View style={styles.imageContainer}>
-              <Image style={styles.cardImage} source={{ uri: item.image }} />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.count}>({item.count} Photos)</Text>
-            </View>
-          </TouchableOpacity>
-        )
-      }}
-    />
-    )}
-    {activeTab === 'Church' && (
-          <FlatList
-            style={styles.userList}
-            data={churchMembers} // Passing the hardcoded users data
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.card2}>
-                <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
-                <View style={styles.cardContent}>
-                  <Text style={styles.name}>{item.firstName}</Text>
-                  <Text style={styles.position}>{item.churchName}</Text>
-                  <TouchableOpacity style={styles.followButton}>
-                    <Text style={styles.followButtonText}>Follow</Text>
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-      </View>
-    </View>
-  
-      // </View>
-    )}
+const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
+    setSelectedImage(imageUri);
+    setModalVisible(true);
+  };
 
-
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    padding: 20,
-  },
-  tabContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navContainer: {
-    flexDirection: 'row',
-    marginTop: 10,
-    
-  },
-  navButton: {
-    marginHorizontal: 5,
-  },
-  card2: {
-    shadowColor: '#00000021',
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.37,
-    shadowRadius: 7.49,
-    elevation: 12,
-    
-    marginVertical: 10,   // Vertical margin between cards
-    marginHorizontal: 20, // Horizontal margin for spacing between cards
-    backgroundColor: 'white',
-    padding: 10,          // Padding inside the card
-    flexDirection: 'row',  // Aligns the image and text horizontally
-    borderRadius: 10,     // Optional, to make the card's corners rounded
-    width: '100%',        // Ensures the card takes the full width of the parent
-  },
-  
-  activeNavButton: {
-    backgroundColor: '#01ebff',
-    color: '#fff',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    padding: 20,
-    backgroundColor: '#D0F8FF',
-    borderRadius: 15,
-    borderColor: '#7FE7FD',  
-    borderWidth: 2,          
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  contentContainer: {
-    marginTop: 20,
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  avatar: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  infoContainer: {
-    marginTop: 20,
-  },
-  infoLabel: {
-    fontWeight: 'bold',
-  },
-  infoValue: {
-    marginTop: 5,
-  },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-  },
-  
-  
-  
-  // FlatList styles
-  userList: {
-    width: '100%',
-  },
-  listContainer: {
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
-  cardItem: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    marginVertical: 10,
-    marginHorizontal: 20,
-    padding: 10,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.37,
-    shadowRadius: 7.49,
-    elevation: 12,
-  },
-  image: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-  },
-
-  
-  position: {
-    fontSize: 14,
-    color: '#696969',
-  },
-  followButton: {
-    marginTop: 10,
-    height: 35,
-    width: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 30,
-    backgroundColor: '#01ebff',
-  },
-  followButtonText: {
-    color: 'white',
-    fontSize: 16,
-  },
-
-  // Modal Styles
-  popupOverlay: {
-    backgroundColor: '#00000080',
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  popup: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    width: '80%',
-    maxHeight: '80%',
-  },
-  modalInfo: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  about: {
-    marginTop: 10,
-    color: '#555',
-    textAlign: 'center',
-  },
-  popupButtons: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  btnClose: {
-    backgroundColor: '#20b2aa',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-  },
-  txtClose: {
-    color: 'white',
-    fontSize: 16,
-  },
+ return (
+     <View style={styles.container}>
+        <View style={styles.card}>
  
+       <View style={styles.avatarContainer}>
+         <TouchableOpacity onPress={() => handleImagePress(userDetails.profilePictureUrl)}>
+             <Image
+                   source={{ uri: userDetails.profilePictureUrl || 'https://www.bootdey.com/img/Content/avatar/avatar6.png' }}
+                   style={styles.avatar}
+              />
+         </TouchableOpacity>
+         <Text style={styles.name}>
+           {userDetails.firstName} {userDetails.secondName}
+         </Text>
+         <Text style={styles.name}>
+           {userDetails.username} 
+         </Text>
+       </View>
+       <View style={styles.infoContainer}>
+         <Text style={styles.infoLabel}>Email:</Text>
+         <Text style={styles.infoValue}>{userDetails.email}</Text>
+       </View>
+       <View style={styles.infoContainer}>
+         <Text style={styles.infoLabel}>Church:</Text>
+         <Text style={styles.infoValue}>{userDetails.churchName}</Text>
+       </View>
+       {/* Render Social Media Links */}
+       <View style={styles.navContainer}>
+        <Button
+            mode="contained"
+            onPress={() => openSheet()}
+            style={styles.navButton}
+         >
+          Posts
+         </Button>
+ 
+         <Button
+           mode="contained"
+           onPress={openChurchDrawer}
+           style={styles.navButton}
+         >
+         Church
+         </Button>
+       </View>
+ 
+       <TabView
+       navigationState={{ index, routes }}
+       renderScene={renderScene}
+       onIndexChange={setIndex}
+       initialLayout={{ width: 400, height: 600 }}
+     />
+     </View> 
+ 
+       <View style={[styles.card, { marginTop: 20 }]}>
+         <View style={styles.table}>
+            <View style={styles.tableRow}>
+                  <Text style={styles.tableLabel}>Province</Text>
+                  <Text style={styles.tableValue}>{userDetails.province || 'N/A'}</Text>
+            </View>
+            <View style={styles.tableRow}>
+                  <Text style={styles.tableLabel}>Language</Text>
+                  {/* <Text style={styles.tableValue}>{ || 'N/A'}</Text> */}
+            </View>
+         </View>
+       </View>
   
-
-  container2: {
-    flex: 1,
-    marginTop: 20,
-  },
-  list: {
-    paddingHorizontal: 10,
-  },
-  listContainer2: {
-    alignItems: 'center',
-  },
-  separator: {
-    marginTop: 10,
-  },
-  /******** card **************/
-  card3: {
-    marginVertical: 8,
-    backgroundColor: 'white',
-    flexBasis: '45%',
-    marginHorizontal: 10,
-  },
-  cardContent: {
-    paddingVertical: 17,
-    paddingHorizontal: 10,
-    justifyContent: 'space-between',
-  },
-  cardImage: {
-    flex: 1,
-    height: 150,
-    width: null,
-  },
-  imageContainer: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.32,
-    shadowRadius: 5.46,
-
-    elevation: 9,
-  },
-  /******** card components **************/
-  title: {
-    fontSize: 18,
-    flex: 1,
-    color: '#778899',
-  },
-  count: {
-    fontSize: 18,
-    flex: 1,
-    color: '#B0C4DE',
-  },
-});
+     
+ 
+       {/* Conditional Rendering Based on Active Tab */}
+       
+   {/* <View style={styles.card}> */}
+     <Modalize
+   ref={modalizeRef}
+   snapPoint={500}
+   flatListProps={{
+     data: userDetails?.postModelList || [],
+     numColumns: 2,
+     keyExtractor: (item) => item.postId,
+     contentContainerStyle: styles.listContainer2,
+     ItemSeparatorComponent: () => <View style={styles.separator} />,
+     renderItem: ({ item }) => (
+       <TouchableOpacity
+       style={styles.card3}
+       onPress={() => handleImagePress(item.content)}
+     >
+         <View style={styles.imageContainer}>
+           <Image style={styles.cardImage} source={{ uri: item.content }} />
+           <TouchableOpacity style={styles.menuIcon}>
+             <Text style={styles.dots}>⋮</Text>
+           </TouchableOpacity>
+         </View>
+         <View style={styles.cardContent}>
+           <Text style={styles.title}>{item.title}</Text>
+         </View>
+       </TouchableOpacity>
+     ),
+   }}
+ />
+ 
+         
+       
+     
+  
+     {/* {activeTab === 'Invite' && (
+       <FlatList
+       style={styles.list}
+       contentContainerStyle={styles.listContainer}
+       data={results}
+       horizontal={false}
+       numColumns={2}
+       keyExtractor={item => {
+         return item.id
+       }}
+       ItemSeparatorComponent={() => {
+         return <View style={styles.separator} />
+       }}
+       renderItem={post => {
+         const item = post.item
+         return (
+           <TouchableOpacity style={styles.card}>
+             <View style={styles.imageContainer}>
+               <Image style={styles.cardImage} source={{ uri: item.image }} />
+             </View>
+             <View style={styles.cardContent}>
+               <Text style={styles.title}>{item.title}</Text>
+               <Text style={styles.count}>({item.count} Photos)</Text>
+             </View>
+           </TouchableOpacity>
+         )
+       }}
+     />
+     )} */}
+     <Modalize
+   ref={churchModalRef}
+   snapPoint={500}
+   flatListProps={{
+     data: churchMembers || [],
+     keyExtractor: (item) => item.id.toString(),
+     renderItem: ({ item }) => (
+       <TouchableOpacity style={styles.card2}>
+         <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
+         <View style={styles.cardContent}>
+           <Text style={styles.name}>{item.firstName} {item.secondName}</Text>
+           <Text style={styles.position}>{item.churchName}</Text>
+           
+         </View>
+       </TouchableOpacity>
+     )
+   }}
+ />
+ 
+       {/* Image Preview Modal */}
+       <Modal visible={modalVisible} transparent={true} animationType="fade">
+         <View style={styles.modalBackground}>
+           <TouchableOpacity style={styles.modalContainer} onPress={() => setModalVisible(false)}>
+             {selectedImage && (
+               <Image style={styles.fullImage} source={{ uri: selectedImage }} />
+             )}
+           </TouchableOpacity>
+         </View>
+       </Modal>
+     </View>
+     
+     
+   );
+ };
+ 
+ 
+ 
+ const styles = StyleSheet.create({
+   container: {
+     flex: 1,
+     backgroundColor: '#fff',
+     alignItems: 'center',
+     padding: 20,
+   },
+   tabContent: {
+     flex: 1,
+     justifyContent: 'center',
+     alignItems: 'center',
+   },
+   navContainer: {
+     flexDirection: 'row',
+     marginTop: 10,
+     
+   },
+   navButton: {
+     marginHorizontal: 5,
+     backgroundColor: '#01ebff',
+     color: '#fff',
+   },
+   card2: {
+     shadowColor: '#00000021',
+     shadowOffset: {
+       width: 6,
+       height: 6,
+     },
+     shadowOpacity: 0.37,
+     shadowRadius: 7.49,
+     elevation: 12,
+     marginVertical: 10,   
+     backgroundColor: '#D0F8FF',
+     borderColor: '#7FE7FD',  
+      borderWidth: 2,    
+     padding: 10,          
+     flexDirection: 'row',  
+     borderRadius: 10,     
+     marginHorizontal: 15,       
+   },
+   
+   activeNavButton: {
+     backgroundColor: '#01ebff',
+     color: '#fff',
+   },
+   card: {
+     width: '100%',
+     maxWidth: 400,
+     padding: 20,
+     backgroundColor: '#D0F8FF',
+     borderRadius: 15,
+     borderColor: '#7FE7FD',  
+     borderWidth: 2,          
+     shadowColor: '#000',
+     shadowOffset: { width: 0, height: 4 },
+     shadowOpacity: 0.1,
+     shadowRadius: 10,
+     elevation: 5,
+   },
+   contentContainer: {
+     marginTop: 20,
+   },
+   avatarContainer: {
+     alignItems: 'center',
+     marginTop: 20,
+   },
+   avatar: {
+     width: 150,
+     height: 150,
+     borderRadius: 75,
+   },
+   name: {
+     fontSize: 20,
+     fontWeight: 'bold',
+     marginTop: 10,
+   },
+   infoContainer: {
+     marginTop: 20,
+   },
+   infoLabel: {
+     fontWeight: 'bold',
+   },
+   infoValue: {
+     marginTop: 5,
+   },
+   errorText: {
+     fontSize: 16,
+     color: 'red',
+     textAlign: 'center',
+   },
+   
+   
+   
+   // FlatList styles
+   userList: {
+     width: '100%',
+   },
+   listContainer: {
+     justifyContent: 'space-between',
+     paddingVertical: 10,
+   },
+   cardItem: {
+     flexDirection: 'row',
+     backgroundColor: 'white',
+     marginVertical: 10,
+     marginHorizontal: 20,
+     padding: 10,
+     borderRadius: 10,
+     shadowColor: '#000',
+     shadowOffset: { width: 0, height: 6 },
+     shadowOpacity: 0.37,
+     shadowRadius: 7.49,
+     elevation: 12,
+   },
+   image: {
+     width: 70,
+     height: 70,
+     borderRadius: 35,
+   },
+ 
+   
+   position: {
+     fontSize: 14,
+     color: '#696969',
+   },
+   followButton: {
+     marginTop: 10,
+     height: 35,
+     width: 100,
+     justifyContent: 'center',
+     alignItems: 'center',
+     borderRadius: 30,
+     backgroundColor: '#01ebff',
+   },
+   followButtonText: {
+     color: 'white',
+     fontSize: 16,
+   },
+ 
+   // Modal Styles
+   popupOverlay: {
+     backgroundColor: '#00000080',
+     flex: 1,
+     justifyContent: 'center',
+     alignItems: 'center',
+   },
+   popup: {
+     backgroundColor: 'white',
+     borderRadius: 10,
+     padding: 20,
+     width: '80%',
+     maxHeight: '80%',
+   },
+   modalInfo: {
+     alignItems: 'center',
+     justifyContent: 'center',
+   },
+   about: {
+     marginTop: 10,
+     color: '#555',
+     textAlign: 'center',
+   },
+   popupButtons: {
+     marginTop: 20,
+     alignItems: 'center',
+   },
+   btnClose: {
+     backgroundColor: '#20b2aa',
+     paddingVertical: 10,
+     paddingHorizontal: 30,
+     borderRadius: 30,
+   },
+   txtClose: {
+     color: 'white',
+     fontSize: 16,
+   },
+  
+   
+ 
+   container2: {
+     flex: 1,
+     marginTop: 20,
+   },
+   list: {
+     paddingHorizontal: 10,
+   },
+   listContainer2: {
+     alignItems: 'center',
+   },
+   separator: {
+     marginTop: 10,
+   },
+   /******** card **************/
+   card3: {
+     marginVertical: 8,
+     // backgroundColor: 'white',
+     flexBasis: '45%',
+     marginHorizontal: 10,
+     backgroundColor: '#D0F8FF',
+     borderColor: '#7FE7FD',  
+      borderWidth: 2,
+   },
+   cardContent: {
+     paddingVertical: 17,
+     paddingHorizontal: 10,
+     justifyContent: 'space-between',
+   },
+   cardImage: {
+     flex: 1,
+     height: 150,
+     width: null,
+   },
+   imageContainer: {
+     shadowColor: '#000',
+     shadowOffset: {
+       width: 0,
+       height: 4,
+     },
+     shadowOpacity: 0.32,
+     shadowRadius: 5.46,
+ 
+     elevation: 9,
+   },
+   /******** card components **************/
+   title: {
+     fontSize: 18,
+     flex: 1,
+     color: '#778899',
+   },
+   count: {
+     fontSize: 18,
+     flex: 1,
+     color: '#B0C4DE',
+   },
+   modalBackground: {
+   flex: 1,
+   backgroundColor: 'rgba(0,0,0,0.8)',
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ modalContainer: {
+   width: '100%',
+   height: '100%',
+   justifyContent: 'center',
+   alignItems: 'center',
+ },
+ fullImage: {
+   width: '90%',
+   height: '70%',
+   resizeMode: 'contain',
+ },
+ menuIcon: {
+   position: 'absolute',
+   top: 5,
+   right: 5,
+   zIndex: 2,
+   padding: 5,
+ },
+ 
+ dots: {
+   fontSize: 20,
+   color: '#333',
+ },
+ 
+ menu: {
+   position: 'absolute',
+   top: 30,
+   right: 5,
+   backgroundColor: '#fff',
+   padding: 10,
+   borderRadius: 5,
+   elevation: 5,
+   zIndex: 3,
+ },
+ 
+ menuItem: {
+   fontSize: 14,
+   color: 'red',
+ },
+ 
+ table: {
+   marginTop: 10,
+   borderWidth: 1,
+   borderColor: '#ccc',
+   borderRadius: 8,
+   overflow: 'hidden',
+ },
+ 
+ tableRow: {
+   flexDirection: 'row',
+   paddingVertical: 10,
+   paddingHorizontal: 15,
+   borderBottomWidth: 1,
+   borderBottomColor: '#eee',
+   backgroundColor: '#fff',
+ },
+ 
+ tableLabel: {
+   flex: 1,
+   fontWeight: 'bold',
+   color: '#333',
+ },
+ 
+ tableValue: {
+   flex: 2,
+   color: '#555',
+ },
+ 
+ });
 
 export default ViewProfileScreen;

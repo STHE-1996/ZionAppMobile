@@ -14,6 +14,7 @@ import RecentChatsScreen from './screens/RecentChatsScreen';
 import UsersScreen from './screens/UsersScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ChatScreen from './screens/ChatScreen';
+import ViewProfileScreen from './screens/ViewProfileScreen';
 
 const Stack = createStackNavigator();
 
@@ -40,6 +41,7 @@ const App = () => {
         <Stack.Screen name="ShopScreen" component={ShopScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="TimelineScreen" component={TimelineScreen} />
+        <Stack.Screen name="View" component={ViewProfileScreen}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

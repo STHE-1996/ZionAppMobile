@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { PostingRequest } from '../models/PostingRequest';
 
+const local_uri = 'http://192.168.0.245:8082/api';
+const live_uri = 'https://zion-app-8bcc080006a7.herokuapp.com/api';
+
 export const TimeLine = async () => {
     try {
       const response = await axios.get('https://zion-app-8bcc080006a7.herokuapp.com/api/Time_Line_Post');
@@ -75,8 +78,8 @@ export const comment = async (comment: string, userId: string, postId: string) =
 
 export const likePost = async (userId : string, postId: string) => {
   try {
-    // const response = await axios.post(`https://zion-app-8bcc080006a7.herokuapp.com/api/likePost`, null, {
-      const response = await axios.post(`http://192.168.0.245:8082/api/likePost`, null, {
+    const response = await axios.post(`https://zion-app-8bcc080006a7.herokuapp.com/api/likePost`, null, {
+      // const response = await axios.post(`http://192.168.0.245:8082/api/likePost`, null, {
       params: {
         userId: userId,
         postId: postId,
