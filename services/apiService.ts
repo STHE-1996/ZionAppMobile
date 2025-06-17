@@ -44,7 +44,8 @@ export const loginUser = async (whatsappNumber: string, password: string) => {
 
 export const verifyAccount = async (enteredPin: string) => {
   try {
-    const response = await axios.post('http://192.168.0.245:8082/api/VerifyAccount', {
+    // const response = await axios.post('http://192.168.0.245:8082/api/VerifyAccount', {
+    const response = await axios.post('https://zion-app-8bcc080006a7.herokuapp.com/api/VerifyAccount', {  
       enteredPin: enteredPin, 
     });
 

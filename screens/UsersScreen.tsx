@@ -71,21 +71,21 @@ const Users = ({ navigation }: { navigation: any }) => {
                 />
               </View>
               <View style={styles.container}>
-      {item.profilePictureUrl ? (
-        <Image
-          style={styles.userImage}
-          source={{ uri: item.profilePictureUrl }}
-        />
-      ) : (
-        <View style={styles.iconContainer}>
-          <Icon
-            name="user" // Choose the icon name you prefer (e.g., 'user', 'user-circle')
-            size={60} // Icon size adjusted to fit the container
-            color="#01ebff" // Icon color
-          />
-        </View>
-      )}
-    </View>
+                 {item.profilePictureUrl ? (
+                 <Image
+                    style={styles.userImage}
+                    source={{ uri: item.profilePictureUrl }}
+                />
+              ) : (
+              <View style={styles.iconContainer}>
+                  <Icon
+                     name="user" // Choose the icon name you prefer (e.g., 'user', 'user-circle')
+                     size={60} // Icon size adjusted to fit the container
+                     color="#01ebff" // Icon color
+                 />
+              </View>
+              )}
+            </View>
               <View style={styles.cardFooter}>
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={styles.name}>{`${item.firstName} ${item.secondName}`}</Text>

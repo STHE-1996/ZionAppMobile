@@ -5,6 +5,7 @@ import { Message } from '../models/ChatMessage';
 import { getMessages, sendMessage } from '../services/chatServices'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomTabNavigator from './BottomTabNavigator';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface ChatScreenProps {
   route: any;
@@ -103,7 +104,21 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: user.profilePictureUrl }} style={styles.profileImage} />
+        {user.profilePictureUrl ? (
+    <Image
+      source={{ uri: user.profilePictureUrl }}
+      style={styles.profileImage}
+      resizeMode="cover"
+    />
+  ) : (
+    <View style={styles.iconContainer}>
+      <Icon
+        name="user"
+        size={50} // Adjust based on `styles.profileImage` dimensions
+        color="#01ebff"
+      />
+    </View>
+  )}
         <Text style={styles.username}>{`${user.firstName} ${user.secondName}`}</Text>
       </View>
 
@@ -147,6 +162,17 @@ const styles = StyleSheet.create({
     width: 40,
     borderRadius: 20,
     marginRight: 10,
+  },
+  iconContainer: {
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+    marginRight: 10,
+    justifyContent: 'center',
+    borderColor: '#DCDCDC',
+    borderWidth: 3,
+    backgroundColor: '#f0f0f0', // Optional: Add a background color for the icon
+    alignSelf: 'center',
   },
   username: {
     fontSize: 18,

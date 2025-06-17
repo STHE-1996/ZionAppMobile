@@ -5,6 +5,7 @@ import { UserDetails } from '../models/UserDetails';
 import { fetchChatData, getMessages, markMessagesAsRead } from '../services/chatServices';
 import { Message } from '../models/ChatMessage';
 import { useFocusEffect } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
   const [chatData, setChatData] = useState<any[]>([]);
@@ -85,7 +86,21 @@ const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
         style={styles.chatItem}
         onPress={() => handleChatSelect(user)} // Use the handleChatSelect function
       >
-        <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
+        {user.profilePictureUrl ? (
+      <Image
+        source={{ uri: user.profilePictureUrl }}
+        style={styles.avatar}
+        resizeMode="cover"
+      />
+    ) : (
+      <View style={styles.iconContainer}>
+        <Icon
+          name="user"     // You can use 'user-circle' or another icon if preferred
+          size={40}       // Adjust based on your `styles.avatar` dimensions
+          color="#01ebff"
+        />
+      </View>
+    )}
         <View style={styles.chatInfo}>
           <Text style={styles.userName}>{user.firstName} {user.secondName}</Text>
           <Text style={styles.lastMessage} numberOfLines={1}>
@@ -139,6 +154,18 @@ const styles = StyleSheet.create({
     width: 50,
     borderRadius: 25,
     marginRight: 15,
+  },
+  iconContainer: {
+   height: 50,
+    width: 50,
+    borderRadius: 25,
+    marginRight: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderColor: '#DCDCDC',
+    borderWidth: 3,
+    backgroundColor: '#f0f0f0', // Optional: Add a background color for the icon
+    alignSelf: 'center',
   },
   chatInfo: {
     flex: 1,
