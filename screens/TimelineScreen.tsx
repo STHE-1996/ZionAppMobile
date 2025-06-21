@@ -6,6 +6,7 @@ import { Post, PostHeart, PostIzibusiso, PostLike, UserDetails } from "../models
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from 'expo-image-picker'; 
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import { faUser } from '@fortawesome/free-solid-svg-icons'; // Import the "fa-user" icon
 
@@ -361,14 +362,15 @@ const handleReaction = (postId: string, type: string) => {
                      />
                ) : (
                 <View style={styles.iconContainer}>
-                <FontAwesome 
-                  name="user" // FontAwesome icon name
-                  style={styles.icon} // Icon styling
-                />
-              </View>
-             )}
+                  <Icon
+                    name="user"
+                    size={30}
+                    color="#01ebff"
+                  />
+                </View>
+               )}
 
-              <View>
+               <View>
                 <Text style={styles.userName}>
                     {item.user.firstName} {item.user.secondName}
                 </Text>
@@ -491,12 +493,13 @@ const handleReaction = (postId: string, type: string) => {
                                   style={styles.profilePic} 
                                />
                              ) : (
-                           <View style={styles.iconContainer}>
-                         <FontAwesome 
-                              name="user" // FontAwesome icon name
-                              style={styles.icon} // Icon styling
-                           />
-                        </View>
+                           <View style={styles.iconContainerComment}>
+                             <Icon
+                                name="user"
+                                size={30}
+                                color="#01ebff"
+                             />
+                           </View>
                       )}
                     <View>
                  <Text style={styles.commentUser}>{comment.firstName} {comment.secondName}</Text>
@@ -606,11 +609,12 @@ const handleReaction = (postId: string, type: string) => {
                                       style={styles.profilePic}
                                  />
                         ) : (
-                                <View style={styles.iconContainer}>
-                                    <FontAwesome
-                                          name="user" // FontAwesome icon name
-                                          style={styles.icon} // Icon styling
-                                     />
+                                <View style={styles.iconContainerLiked}>
+                                  <Icon
+                                     name="user"
+                                     size={20}
+                                     color="#01ebff"
+                                  />
                                 </View>
                          )}
                       </View>
@@ -671,14 +675,38 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
+  iconContainerComment: {
+   width: 40,
+    height: 40,
+    borderRadius: 20,
+     alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: '#DCDCDC',
+    borderWidth: 3,
+    backgroundColor: '#f0f0f0', 
+    alignSelf: 'center',
+  },
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 20, 
-    marginRight: 10,
-    backgroundColor: '#f0f0f0', 
+    borderRadius: 20,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center', 
+    borderColor: '#DCDCDC',
+    borderWidth: 3,
+    backgroundColor: '#f0f0f0', 
+    alignSelf: 'center',
+  },
+  iconContainerLiked:{
+   width: 35,
+    height: 35,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: '#DCDCDC',
+    borderWidth: 3,
+    backgroundColor: '#f0f0f0', 
+    alignSelf: 'center',
   },
   icon: {
     color: '#01ebff', 

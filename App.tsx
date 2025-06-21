@@ -15,6 +15,8 @@ import UsersScreen from './screens/UsersScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ChatScreen from './screens/ChatScreen';
 import ViewProfileScreen from './screens/ViewProfileScreen';
+import StatusScreen from './screens/StatusScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -29,6 +31,7 @@ const App = () => {
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
         <Stack.Screen name="Chats" component={ChatScreen} />
         <Stack.Screen name="UsersScreen" component={UsersScreen}/>
+        <Stack.Screen name="StatusScreen" component={StatusScreen}/>
         
 
         {/* Main Tab Navigator */}

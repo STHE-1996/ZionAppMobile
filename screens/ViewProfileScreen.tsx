@@ -7,6 +7,7 @@ import { TabView, SceneMap } from 'react-native-tab-view';
 import { Card, Button, Avatar } from 'react-native-paper';
 import { getChurchMembers, getUsers } from '../services/apiService';
 import { Modalize } from 'react-native-modalize';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const FirstTab = () => (
   <View style={[styles.tabContent, { backgroundColor: '#ff4081' }]}>
@@ -191,10 +192,20 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
  
        <View style={styles.avatarContainer}>
          <TouchableOpacity onPress={() => handleImagePress(userDetails.profilePictureUrl)}>
-             <Image
-                   source={{ uri: userDetails.profilePictureUrl || 'https://www.bootdey.com/img/Content/avatar/avatar6.png' }}
+              {userDetails.profilePictureUrl ? (
+                 <Image
+                   source={{ uri: userDetails.profilePictureUrl }}
                    style={styles.avatar}
-              />
+                 />
+               ) : (
+                 <View style={styles.iconContainer}>
+                   <Icon
+                     name="user"
+                     size={60}
+                     color="#01ebff"
+                   />
+                 </View>
+               )}
          </TouchableOpacity>
          <Text style={styles.name}>
            {userDetails.firstName} {userDetails.secondName}
@@ -325,7 +336,17 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
      keyExtractor: (item) => item.id.toString(),
      renderItem: ({ item }) => (
        <TouchableOpacity style={styles.card2}>
-         <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
+         {item.profilePictureUrl ? (
+              <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
+              ) : (
+                  <View style={styles.iconforListofUsers}>
+                  <Icon
+                     name="user"
+                     size={50}
+                     color="#01ebff"
+                   />
+                </View>
+               )}
          <View style={styles.cardContent}>
            <Text style={styles.name}>{item.firstName} {item.secondName}</Text>
            <Text style={styles.position}>{item.churchName}</Text>
@@ -413,6 +434,28 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
      shadowRadius: 10,
      elevation: 5,
    },
+   iconContainer: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: '#DCDCDC',
+    borderWidth: 3,
+    backgroundColor: '#f0f0f0', 
+    alignSelf: 'center',
+  },
+  iconforListofUsers: {
+     width: 70,
+    height: 70,
+    borderRadius: 35,
+   alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: '#DCDCDC',
+    borderWidth: 3,
+    backgroundColor: '#f0f0f0',
+    alignSelf: 'center',
+  },
    contentContainer: {
      marginTop: 20,
    },

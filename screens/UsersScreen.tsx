@@ -90,7 +90,7 @@ const Users = ({ navigation }: { navigation: any }) => {
                 <View style={{ alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={styles.name}>{`${item.firstName} ${item.secondName}`}</Text>
                   <Text style={styles.position}>{item.churchType}</Text>
-                  <View style={styles.buttonRow}>
+                  <View style={styles.buttonRowResponsive}>
                      <TouchableOpacity
                           style={styles.followButton}
                           onPress={() => clickEventListener(item)}>
@@ -190,6 +190,15 @@ const styles = StyleSheet.create({
     color: '#008080',
     fontWeight: 'bold',
   },
+  buttonRowResponsive: {
+  flexDirection: 'row',
+  flexWrap: 'wrap', // allow wrapping to a new line if needed
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 10,
+  gap: 10, // for spacing if supported; if not, use marginRight/marginBottom on buttons
+},
+
   position: {
     fontSize: 14,
     flex: 1,
@@ -197,15 +206,17 @@ const styles = StyleSheet.create({
     color: '#696969',
   },
   followButton: {
-    marginTop: 10,
-    height: 35,
-    width: 80,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 30,
-    backgroundColor: 'rgb(1, 235, 252)',
-  },
+  marginTop: 10,
+  minHeight: 35,
+  paddingHorizontal: 15,
+  flexShrink: 1,
+  flexGrow: 0,
+  justifyContent: 'center',
+  alignItems: 'center',
+  borderRadius: 30,
+  backgroundColor: 'rgb(1, 235, 252)',
+},
+
   followButtonText: {
     color: '#FFFFFF',
     fontSize: 10,

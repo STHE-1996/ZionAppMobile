@@ -84,7 +84,7 @@ const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
     return (
       <TouchableOpacity
         style={styles.chatItem}
-        onPress={() => handleChatSelect(user)} // Use the handleChatSelect function
+        onPress={() => handleChatSelect(user)} 
       >
         {user.profilePictureUrl ? (
       <Image
@@ -95,8 +95,8 @@ const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
     ) : (
       <View style={styles.iconContainer}>
         <Icon
-          name="user"     // You can use 'user-circle' or another icon if preferred
-          size={40}       // Adjust based on your `styles.avatar` dimensions
+          name="user"     
+          size={40}       
           color="#01ebff"
         />
       </View>
