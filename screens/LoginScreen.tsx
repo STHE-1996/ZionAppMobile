@@ -5,6 +5,8 @@ import Modal from 'react-native-modal';
 import FastImage from 'react-native-fast-image';
 // import { loginUser } from './services/apiService';  // import the login service
 import { WebView } from 'react-native-webview';
+import { Video } from 'expo-av';
+
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
@@ -97,33 +99,36 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         </TouchableOpacity>
       </View>
       </View>
-      <Modal isVisible={isModalVisible} onBackdropPress={hideModal}>
+      <Modal
+  isVisible={isModalVisible}
+  onBackdropPress={hideModal}
+  backdropColor="transparent"
+  style={{ margin: 0 }} // full-screen, no default margin
+>
   <View style={styles.modalContent}>
     <Text>{modalContent.message}</Text>
 
-    {modalContent.type === 'error' ? (
-      <WebView
-        originWhitelist={['*']}
-        source={{
-          uri: 'https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExMHU4MXBhaGt2aDFibzQyaHFjMmtnM2UwM283cGcwdHpkNTYxZ2t1ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9ZQ/hp3dmEypS0FaoyzWLR/giphy.gif',
-        }}
-        style={[styles.gif, { backgroundColor: 'transparent' }]} // Adding transparent background here
-        javaScriptEnabled={true} // This is optional, but helps to ensure everything is working in the WebView
-        domStorageEnabled={true} // Ensures better compatibility with media content
+     {modalContent.type === 'success' && (
+      <Video
+        source={require('../assets/love.gif')}
+        style={styles.gif}
+        shouldPlay
+        isLooping
+        resizeMode="contain"
+        isMuted
       />
-    ) : null}
+    )}
 
-    {modalContent.type === 'success' ? (
-      <WebView
-        originWhitelist={['*']}
-        source={{
-          uri: 'https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExejhkaHAxa2Z6bmh1MGszazZwbXNuNHJuZ2FqcDd4dml2Y2V4YWx5aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9ZQ/lRXY41yFFi9RfNXyPN/giphy.gif',
-        }}
-        style={[styles.gif, { backgroundColor: 'transparent' }]} // Adding transparent background here as well
-        javaScriptEnabled={true} // Optional
-        domStorageEnabled={true} // Optional
+    {modalContent.type === 'error' && (
+      <Video
+        source={require('../assets/error.gif - Online GIF to MP4 Video converter.mp4')}
+        style={styles.gif}
+        shouldPlay
+        isLooping
+        resizeMode="contain"
+        isMuted
       />
-    ) : null}
+    )}
     
     <Button title="Close" onPress={hideModal} />
   </View>
@@ -142,14 +147,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
   },
   modalContent: {
-    width: 360, // Set your desired width
-    height: 320, // Set your desired height (same as width for square shape)
-    backgroundColor: 'none',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    borderRadius: 10, // Optional: for rounded corners
-  },
+  backgroundColor: 'white',
+  padding: 20,
+  borderRadius: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
+  alignSelf: 'center', // 👈 Add this
+  width: 320,          // Optional fixed width
+},
   gif: {
     width: 200,
     height: 200,

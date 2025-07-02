@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import { TextInput, Alert, ActivityIndicator } from 'react-native';
 import { UserDetails } from "../models/UserDetails";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Status {
   id: string;
@@ -179,10 +180,18 @@ const uploadStatus = async () => {
 useEffect(() => {
   const loadProfiles = async () => {
     try {
+      const token = await AsyncStorage.getItem('userToken');
+
+      if (!token) {
+        console.warn('Authentication token not found.');
+        return;
+      }
+
       const res = await fetch("https://zion-app-8bcc080006a7.herokuapp.com/api/StatusPost", {
         headers: {
-          Accept: "application/json"
-        }
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`, // ✅ Token added here
+        },
       });
 
       const text = await res.text();
@@ -193,7 +202,13 @@ useEffect(() => {
         return;
       }
 
-      const data: UserProfile[] = JSON.parse(text);
+      const data = JSON.parse(text);
+
+      if (!Array.isArray(data)) {
+        console.error("Expected an array but got:", data);
+        return;
+      }
+
       const shuffled = data.sort(() => 0.5 - Math.random());
       setProfiles(shuffled);
     } catch (err) {
@@ -204,38 +219,48 @@ useEffect(() => {
   loadProfiles();
 }, []);
 
+
 const fetchStatusesByUser = async (userId: string) => {
   try {
+    const token = await AsyncStorage.getItem('userToken');
+
+    if (!token) {
+      Alert.alert('Authentication Error', 'User token not found');
+      return;
+    }
+
     const res = await fetch(`https://zion-app-8bcc080006a7.herokuapp.com/api/${userId}`, {
-      headers: { Accept: 'application/json' }
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ Token added here
+      },
     });
 
     const jsonText = await res.text();
     const data = JSON.parse(jsonText);
 
     if (Array.isArray(data.statusModelList)) {
-      const parsed = data.statusModelList.map((status:any, index:any) => {
-        const url = status.statusContent?.trim() ?? "";
-        const extension = url.split("?")[0];
+      const parsed = data.statusModelList.map((status: any, index: any) => {
+        const url = status.statusContent?.trim() ?? '';
+        const extension = url.split('?')[0];
         return {
           id: status.statusId ?? `${index}`,
-          type: /\.(mp4|mov|avi|mkv|webm)$/i.test(extension) ? "video" : "image",
+          type: /\.(mp4|mov|avi|mkv|webm)$/i.test(extension) ? 'video' : 'image',
           url,
-          title: status.caption || "Untitled",
+          title: status.caption || 'Untitled',
         };
       });
 
       setUserStatuses(parsed);
       setUserStatusModalVisible(true);
     } else {
-      Alert.alert("No statuses", "This user has no statuses.");
+      Alert.alert('No statuses', 'This user has no statuses.');
     }
   } catch (error) {
-    console.error("Error loading user statuses:", error);
-    Alert.alert("Error", "Failed to load user statuses.");
+    console.error('Error loading user statuses:', error);
+    Alert.alert('Error', 'Failed to load user statuses.');
   }
 };
-
 
 
 
@@ -289,7 +314,16 @@ const fetchStatusesByUser = async (userId: string) => {
       </View>
 
       {/* Tab Content */}
-      {activeTab === 1 ? (
+     {activeTab === 1 ? (
+      sampleStatuses.length === 0 ? (
+        <View style={styles.noProductContainer}>
+          <Image
+            source={require('../assets/Logo.png')}
+            style={styles.noProductImage}
+          />
+          <Text style={styles.noProductText}>No products available</Text>
+        </View>
+      ) : (
         <FlatList
           data={sampleStatuses}
           renderItem={renderShortItem}
@@ -299,36 +333,49 @@ const fetchStatusesByUser = async (userId: string) => {
           snapToInterval={screenHeight}
           decelerationRate="fast"
         />
+      )
+    ) : (
+      profiles.length === 0 ? (
+        <View style={styles.noProductContainer}>
+          <Image
+            source={require('../assets/Logo.png')}
+            style={styles.noProductImage}
+          />
+          <Text style={styles.noProductText}>No products available</Text>
+        </View>
       ) : (
-           <View style={styles.allStatusesContainer}>
-             <FlatList
-                 data={profiles}
-                 keyExtractor={(item) => item.id}
-                 contentContainerStyle={styles.profileList}
-                 numColumns={3}
-                 renderItem={({ item }) => (
-                   <TouchableOpacity
-                       onPress={() => {
-                       setViewingUserId(item.id);
-                       fetchStatusesByUser(item.id); // 👈 fetch user statuses here
-                     }}
-                      style={styles.profileWrapper}
-                  >
-                <Image source={{ uri: item.profilePictureUrl }} style={styles.profileImage} />
-                      <Text style={styles.usernameText}>{item.username}</Text>
-             </TouchableOpacity>
+        <View style={styles.allStatusesContainer}>
+          <FlatList
+            data={profiles}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.profileList}
+            numColumns={3}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => {
+                  setViewingUserId(item.id);
+                  fetchStatusesByUser(item.id);
+                }}
+                style={styles.profileWrapper}
+              >
+                <Image
+                  source={{ uri: item.profilePictureUrl }}
+                  style={styles.profileImage}
+                />
+                <Text style={styles.usernameText}>{item.username}</Text>
+              </TouchableOpacity>
             )}
+          />
+        </View>
+      )
+    )}
 
-           />
-          </View>
-       )}
-
-      <TouchableOpacity
-            style={styles.stickyButton}
-            onPress={() => setModalVisible(true)}
-      >
-           <Icon name="plus" size={24} color="#fff" />
-      </TouchableOpacity>
+    <TouchableOpacity
+      style={styles.stickyButton}
+      onPress={() => setModalVisible(true)}
+    >
+      <Icon name="plus" size={24} color="#fff" />
+    </TouchableOpacity>
 
       <Modal
              animationType="slide"
@@ -424,6 +471,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 5,
   },
+   noProductContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 },
+  noProductImage: { width: 150, height: 150, resizeMode: 'contain' },
+  noProductText: { marginTop: 10, fontSize: 16, color: '#666' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   activeTab: {
     backgroundColor: "#01ebff",
   },

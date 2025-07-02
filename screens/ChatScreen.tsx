@@ -8,10 +8,11 @@ import BottomTabNavigator from './BottomTabNavigator';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface ChatScreenProps {
+  navigation: any;
   route: any;
 }
 
-const ChatScreen = ({ route }: ChatScreenProps) => {
+const ChatScreen = ({ navigation,route }: ChatScreenProps) => {
   const { user }: { user: UserDetails } = route.params; // Receive user details as a parameter
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -102,25 +103,36 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
   };
 
   return (
+    
     <View style={styles.container}>
-      <View style={styles.header}>
-        {user.profilePictureUrl ? (
-    <Image
-      source={{ uri: user.profilePictureUrl }}
-      style={styles.profileImage}
-      resizeMode="cover"
-    />
-  ) : (
-    <View style={styles.iconContainer}>
-      <Icon
-        name="user"
-        size={50} // Adjust based on `styles.profileImage` dimensions
-        color="#01ebff"
-      />
-    </View>
-  )}
-        <Text style={styles.username}>{`${user.firstName} ${user.secondName}`}</Text>
-      </View>
+  <View style={styles.header}>
+    {/* Profile Image or Icon */}
+    <TouchableOpacity onPress={() => navigation.navigate('View', { userId: user.id })}>
+      {user.profilePictureUrl ? (
+        <Image
+          source={{ uri: user.profilePictureUrl }}
+          style={styles.profileImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.iconContainer}>
+          <Icon
+            name="user"
+            size={50}
+            color="#01ebff"
+          />
+        </View>
+      )}
+    </TouchableOpacity>
+
+    {/* User Name */}
+    <TouchableOpacity onPress={() => navigation.navigate('View', { userId: user.id })}>
+      <Text style={styles.username}>
+        {`${user.firstName} ${user.secondName}`}
+      </Text>
+    </TouchableOpacity>
+  </View>
+
 
       <FlatList
         data={messages}

@@ -32,7 +32,7 @@ const ThirdTab = () => (
 );
 
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const data = [
     {
       id: 1,
@@ -191,26 +191,33 @@ const openSheet = () => {
   }, []);
 
   useEffect(() => {
-    const fetchUserDetails = async () => {
-      try {
-        const senderId = await AsyncStorage.getItem('userId');
-        if (senderId) {
-          
-          // const response = await axios.get(`http://192.168.0.245:8082/api/UserProfile/${senderId}`);
-          const response = await axios.get(`https://zion-app-8bcc080006a7.herokuapp.com/api/UserProfile/${senderId}`);
-          setUserDetails(response.data);
-          console.log(response.data)
-        }
-      } catch (error) {
-        console.error('Error fetching user details:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchUserDetails = async () => {
+    try {
+      const senderId = await AsyncStorage.getItem('userId');
+      const token = await AsyncStorage.getItem('userToken');
 
-    fetchUserDetails();
-    
-  }, []);
+      if (senderId && token) {
+        const response = await axios.get(
+          `https://zion-app-8bcc080006a7.herokuapp.com/api/UserProfile/${senderId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // ✅ Secure the request
+            },
+          }
+        );
+
+        setUserDetails(response.data);
+        console.log(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUserDetails();
+}, []);
 
   if (loading) {
     return (
@@ -381,6 +388,15 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
         </View>
       </TouchableOpacity>
     ),
+     ListEmptyComponent: () => (
+      <View style={styles.noProductContainer}>
+        <Image
+          source={require('../assets/Logo.png')}
+          style={styles.noProductImage}
+        />
+        <Text style={styles.noProductText}>No products available</Text>
+      </View>
+    )
   }}
 />
 
@@ -424,7 +440,9 @@ const handleImagePress = (imageUri: React.SetStateAction<string | null>) => {
     data: churchMembers || [],
     keyExtractor: (item) => item.id.toString(),
     renderItem: ({ item }) => (
-      <TouchableOpacity style={styles.card2}>
+      <TouchableOpacity style={styles.card2}
+      onPress={() => navigation.navigate('View', { userId: item.id })}
+      >
        {item.profilePictureUrl ? (
      <Image style={styles.image} source={{ uri: item.profilePictureUrl }} />
      ) : (
@@ -795,6 +813,23 @@ tableValue: {
   color: '#555',
 },
 
+noProductContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingVertical: 50,
+},
+noProductImage: {
+  width: 100,
+  height: 100,
+  resizeMode: 'contain',
+  marginBottom: 10,
+},
+noProductText: {
+  fontSize: 16,
+  color: '#888',
+  textAlign: 'center',
+},
 });
 
 export default ProfileScreen;

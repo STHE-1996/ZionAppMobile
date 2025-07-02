@@ -22,7 +22,7 @@ export interface SocialMediaLinkModels {
   }
   
   export interface Comment {
-    id: string;
+    commentId: string;
     firstName: string;
     secondName: string;
     text: string;

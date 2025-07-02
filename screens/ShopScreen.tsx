@@ -1,157 +1,478 @@
-import React, { useState } from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, Image, FlatList } from 'react-native'
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  ActivityIndicator,
+  TextInput,
+  Alert,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface Product {
+  productId: string;
+  price: string;
+  quantity: string;
+  description: string;
+  productUrl: string;
+  productName: string;
+  postedTime: string;
+  productEnums: string;
+}
 
 const ShopScreen = () => {
-  const data = [
-    {
-      id: 1,
-      title: 'Product 1',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/suvtrees-003.webp?alt=media&token=1b02009d-72d8-40ec-a2cd-a4d593d72d4b',
-    },
-    {
-      id: 2,
-      title: 'Product 2',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/shelby-american-muscle-cars-5893728-2560-1920.jpg?alt=media&token=18942b2a-687b-4000-8531-8c15b8d98832',
-    },
-    {
-      id: 3,
-      title: 'Product 3',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/best_car_wallpapers%201.jpeg?alt=media&token=190d41cd-46f4-4cc9-b6da-2582c6db9c08',
-    },
-    {
-      id: 4,
-      title: 'Product 4',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/47457.webp?alt=media&token=9d68e725-4fef-472f-bd1d-0b408ff24de1',
-    },
-    {
-      id: 5,
-      title: 'Product 5',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/NetBhB7.jpg?alt=media&token=87198ab1-ad04-4ea1-860e-d55e35da2bee',
-    },
-    {
-      id: 6,
-      title: 'Product 6',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/5-lamborghini-gallardo-car-wallpaper-1024x576.jpg?alt=media&token=ef54fa54-7ab8-4af1-bd03-86b68a30cbd6',
-    },
-    {
-      id: 7,
-      title: 'Product 7',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/e6f99cc790210cb3ea63bc2755e98550.jpg?alt=media&token=cd3b9dab-ed62-4657-82b1-889cdc2822c0',
-    },
-    {
-      id: 8,
-      title: 'Product 8',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/Bmw%20cars%20usa-2.jpg?alt=media&token=8d44a607-240c-4a13-8fe5-adee7827be72',
-    },
-    {
-      id: 9,
-      title: 'Product 9',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/suvtrees-003.webp?alt=media&token=1b02009d-72d8-40ec-a2cd-a4d593d72d4b',
-    },
-    {
-      id: 9,
-      title: 'Product 10',
-      count: 4,
-      image: 'https://firebasestorage.googleapis.com/v0/b/ziontimeline.appspot.com/o/dd9cdf7c2daead48c83ce0d8cbf42f1a.jpg?alt=media&token=0cdef31f-7e60-4791-b341-f2e979c48e35',
-    },
-  ]
+  const [activeTab, setActiveTab] = useState(1);
+  const [productName, setProductName] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [category, setCategory] = useState('food'); // default enum
+  const [productImageUri, setProductImageUri] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [myProducts, setMyProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const [results, setResults] = useState(data)
+  const pickProductImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      setProductImageUri(result.assets[0].uri);
+    }
+  };
+
+  const uploadProduct = async () => {
+  if (!productImageUri || !productName || !description || !price || !quantity) {
+    return Alert.alert('Missing Fields', 'Please fill all the fields');
+  }
+
+  try {
+    setUploading(true);
+
+    const token = await AsyncStorage.getItem('userToken');
+
+    if (!token) {
+      Alert.alert('Authentication Error', 'User token not found');
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append('file', {
+      uri: productImageUri,
+      name: productImageUri.split('/').pop() || 'product.jpg',
+      type: 'image/jpeg',
+    } as any);
+
+    formData.append('id', '66f09754377b7a5898cb3e31');
+    formData.append('description', description);
+    formData.append('productName', productName);
+    formData.append('quantity', quantity);
+    formData.append('price', price);
+    formData.append('productEnums', category);
+
+    const response = await fetch(
+      'https://zion-app-8bcc080006a7.herokuapp.com/api/uploadImageProduct',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`, // ✅ Token added here
+        },
+        body: formData,
+      }
+    );
+
+    if (response.ok) {
+      Alert.alert('Success', 'Product uploaded!');
+      setModalVisible(false);
+      setProductName('');
+      setDescription('');
+      setPrice('');
+      setQuantity('');
+      setProductImageUri('');
+      setCategory('food');
+    } else {
+      const errText = await response.text();
+      console.warn('Server error:', errText);
+      Alert.alert('Error', 'Upload failed');
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Error', 'Something went wrong');
+  } finally {
+    setUploading(false);
+  }
+};
+
+  const fetchMyProducts = async () => {
+  setLoading(true);
+
+  try {
+    const token = await AsyncStorage.getItem('userToken');
+    const senderId = await AsyncStorage.getItem('userId');
+
+    if (!token || !senderId) {
+      Alert.alert('Authentication Error', 'Missing user token or ID');
+      setLoading(false);
+      return;
+    }
+
+    const response = await fetch(`https://zion-app-8bcc080006a7.herokuapp.com/api/myProduct/${senderId}`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server error: ${errorText}`);
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const raw = await response.text();
+      throw new Error(`Unexpected response format:\n${raw}`);
+    }
+
+    // ✅ ONLY call .json() once and don't wrap it in JSON.parse
+    const data: Product[] = await response.json();
+
+    // Optionally verify structure
+    if (!Array.isArray(data)) {
+      throw new Error('Expected an array of products');
+    }
+
+    setMyProducts(data);
+  } catch (error) {
+    console.error('Fetch error:', error);
+    Alert.alert('Error', 'Failed to load products');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+  useEffect(() => {
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+
+      if (!token) {
+        Alert.alert('Authentication Error', 'User token not found');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(
+        'https://zion-app-8bcc080006a7.herokuapp.com/api/ProductPosts',
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`, // ✅ Token added here
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: Product[] = await response.json();
+      setProducts(data);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load products');
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (activeTab === 1) {
+    fetchMyProducts(); // Assuming this one already has the token added, as we updated earlier
+  } else {
+    fetchProducts(); // 🆕 This now includes token-based auth
+  }
+}, [activeTab]);
 
   return (
     <View style={styles.container}>
-      <FlatList
-        style={styles.list}
-        contentContainerStyle={styles.listContainer}
-        data={results}
-        horizontal={false}
-        numColumns={2}
-        keyExtractor={item => {
-          return item.id.toString()
-        }}
-        ItemSeparatorComponent={() => {
-          return <View style={styles.separator} />
-        }}
-        renderItem={post => {
-          const item = post.item
-          return (
-            <TouchableOpacity style={styles.card}>
-              <View style={styles.imageContainer}>
-                <Image style={styles.cardImage} source={{ uri: item.image }} />
-              </View>
-              <View style={styles.cardContent}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.count}>({item.count} Photos)</Text>
-              </View>
-            </TouchableOpacity>
+      {/* Tab Buttons */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 1 && styles.activeTab]}
+          onPress={() => setActiveTab(1)}
+        >
+          <Text style={styles.tabText}>My Product</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 2 && styles.activeTab]}
+          onPress={() => setActiveTab(2)}
+        >
+          <Text style={styles.tabText}>All Product</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab Content */}
+      <View style={styles.contentContainer}>
+        {activeTab === 1 ? (
+          loading ? (
+            <ActivityIndicator size="large" color="#0000ff" />
+          ) : myProducts.length === 0 ? (
+            <View style={styles.noProductContainer}>
+              <Image
+                  source={require('../assets/Logo.png')}
+                  style={styles.noProductImage}
+              />
+              <Text style={styles.noProductText}>No products available</Text>
+            </View>
+          ) : (
+           <ScrollView contentContainerStyle={styles.gridContainer}>
+                {myProducts.map((product) => (
+                <View key={product.productId} style={styles.productCard}>
+                    <Image source={{ uri: product.productUrl }} style={styles.productImage} />
+                    <Text style={styles.productName}>{product.productName}</Text>
+                    <Text>{product.description}</Text>
+                    <Text>Price: ${product.price}</Text>
+                    <Text>Quantity: {product.quantity}</Text>
+                    <Text>Options: {product.productEnums}</Text>
+                    </View>
+                 ))}
+             </ScrollView>
+
           )
-        }}
-      />
+        ) : loading ? (
+          <ActivityIndicator size="large" color="#0000ff" />
+        ) : products.length === 0 ? (
+          <View style={styles.noProductContainer}>
+            <Image
+              source={require('../assets/Logo.png')}
+              style={styles.noProductImage}
+            />
+            <Text style={styles.noProductText}>No products available</Text>
+          </View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.gridContainer}>
+               {products.map((product) => (
+                  <View key={product.productId} style={styles.productCard}>
+                    <Image source={{ uri: product.productUrl }} style={styles.productImage} />
+                    <Text style={styles.productName}>{product.productName}</Text>
+                    <Text>{product.description}</Text>
+                    <Text>Price: ${product.price}</Text>
+                    <Text>Quantity: {product.quantity}</Text>
+                    <Text>Options: {product.productEnums}</Text>
+                  </View>
+                ))}
+           </ScrollView>
+        )}
+      </View>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setModalVisible(true)}
+      >
+        <Icon name="plus" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Upload Modal */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView>
+              <Text style={styles.modalTitle}>Add Product</Text>
+
+              <TextInput
+                placeholder="Product Name"
+                style={styles.input}
+                value={productName}
+                onChangeText={setProductName}
+              />
+              <TextInput
+                placeholder="Description"
+                style={styles.input}
+                value={description}
+                onChangeText={setDescription}
+              />
+              <TextInput
+                placeholder="Price"
+                style={styles.input}
+                keyboardType="numeric"
+                value={price}
+                onChangeText={setPrice}
+              />
+              <TextInput
+                placeholder="Quantity"
+                style={styles.input}
+                keyboardType="numeric"
+                value={quantity}
+                onChangeText={setQuantity}
+              />
+
+              {/* Enum Dropdown */}
+              <View style={styles.input}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 5 }}>Category</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const nextCategory = category === 'food' ? 'cosmetic' : 'food';
+                    setCategory(nextCategory);
+                  }}
+                  style={styles.dropdown}
+                >
+                  <Text>{category}</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.imagePicker}
+                onPress={pickProductImage}
+              >
+                <Text style={{ color: 'white' }}>
+                  {productImageUri ? 'Change Image' : 'Pick Product Image'}
+                </Text>
+              </TouchableOpacity>
+
+              {uploading ? (
+                <ActivityIndicator size="large" color="#0000ff" />
+              ) : (
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={uploadProduct}
+                >
+                  <Text style={{ color: 'white' }}>Upload</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={{ color: 'white' }}>Cancel</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: '#f2f2f2' },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#eee',
+    padding: 10,
+  },
+  tabButton: {
     flex: 1,
-    marginTop: 20,
+    padding: 12,
+    borderRadius: 6,
+    backgroundColor: '#ccc',
+    alignItems: 'center',
+    marginHorizontal: 5,
   },
-  list: {
-    paddingHorizontal: 10,
+  activeTab: {
+    backgroundColor: '#01ebff',
   },
-  listContainer: {
+  tabText: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  // tabText: { color: 'black', fontWeight: 'bold' },
+  contentContainer: { flex: 1, paddingHorizontal: 10, paddingBottom: 80 },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  productCard: {
+    width: '48%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    marginVertical: 10,
+    padding: 10,
+    elevation: 2,
+  },
+  productImage: { width: '100%', height: 100, borderRadius: 10 },
+  productName: { fontWeight: 'bold', marginVertical: 5 },
+  noProductContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 },
+  noProductImage: { width: 150, height: 150, resizeMode: 'contain' },
+  noProductText: { marginTop: 10, fontSize: 16, color: '#666' },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#01ebff',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000099',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
+  input: {
+    backgroundColor: '#eee',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginVertical: 10,
+  },
+  dropdown: {
+    backgroundColor: '#ddd',
+    padding: 10,
+    borderRadius: 8,
     alignItems: 'center',
   },
-  separator: {
+  imagePicker: {
+    backgroundColor: '#4caf50',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 15,
+    alignItems: 'center',
+  },
+  uploadButton: {
+    backgroundColor: '#2196f3',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f44336',
+    padding: 15,
+    borderRadius: 8,
     marginTop: 10,
+    alignItems: 'center',
   },
-  /******** card **************/
-  card: {
-    marginVertical: 8,
-    backgroundColor: 'white',
-    flexBasis: '45%',
-    marginHorizontal: 10,
-  },
-  cardContent: {
-    paddingVertical: 17,
-    paddingHorizontal: 10,
-    justifyContent: 'space-between',
-  },
-  cardImage: {
-    flex: 1,
-    height: 150,
-    width: null,
-  },
-  imageContainer: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.32,
-    shadowRadius: 5.46,
+});
 
-    elevation: 9,
-  },
-  /******** card components **************/
-  title: {
-    fontSize: 18,
-    flex: 1,
-    color: '#778899',
-  },
-  count: {
-    fontSize: 18,
-    flex: 1,
-    color: '#B0C4DE',
-  },
-})
 export default ShopScreen;

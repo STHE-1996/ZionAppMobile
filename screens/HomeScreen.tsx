@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 const HomeScreen = ({ navigation }: { navigation: any }) => {
   const data = [
-    { id: 1, title: 'Home', icon: 'home', color: '#01ebff', size: 40 },
+    { id: 1, title: 'Timeline', icon: 'home', color: '#01ebff', size: 40 },
     { id: 2, title: 'User', icon: 'user', color: '#01ebff', size: 50 },
     { id: 3, title: 'Event', icon: 'calendar', color: '#01ebff', size: 50 },
     { id: 4, title: 'E-commerce', icon: 'shopping-cart', color: '#01ebff', size: 40 },
@@ -42,17 +42,17 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
               } else if (item.title === 'User') {
                 navigation.navigate('UsersScreen'); 
               } else if (item.title === 'E-commerce') {
-                // navigation.navigate('ShopScreen');
-                 showAlert(item.title);
+                navigation.navigate('ShopScreen');
+                //  showAlert(item.title);
               } else if (item.title === 'Profile') {
                 navigation.navigate('ProfileScreen');
               }else if (item.title === 'Notification') {
                 // navigation.navigate('NotificationScreen');
                  showAlert(item.title);
               } else if (item.title === 'Music') {
-                // navigation.navigate('VerificationScreen');
-                showAlert(item.title);
-              } else if (item.title === 'Home') {
+                navigation.navigate('MusicScreen');
+                // showAlert(item.title);
+              } else if (item.title === 'Timeline') {
                 navigation.navigate('TimelineScreen');
               } else if (item.title === 'Status'){
                 // showAlert(item.title);

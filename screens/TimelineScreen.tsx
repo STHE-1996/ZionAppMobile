@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, FlatList, Image, StyleSheet, ActivityIndicator, Alert, Modal, Button } from "react-native";
-import Video from "react-native-video";
+import { ResizeMode, Video } from 'expo-av';
+
 import { comment, heartPost, izibusisoPost, likePost, postTimeLine, TimeLine, uploadImageTimeLine } from "../services/timeLimeServices";
 import { Post, PostHeart, PostIzibusiso, PostLike, UserDetails } from "../models/UserDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,7 +14,7 @@ import { faUser } from '@fortawesome/free-solid-svg-icons'; // Import the "fa-us
 
 
 
-  const TimelineScreen = () => {
+  const TimelineScreen = ({ navigation }: { navigation: any }) => {
   const [activity, setActivity] = useState("");
   const [showComments, setShowComments] = useState<{ [key: string]: boolean }>({});
   const [timeline, setTimeLine] = useState<Post[]>([]);
@@ -27,6 +28,8 @@ import { faUser } from '@fortawesome/free-solid-svg-icons'; // Import the "fa-us
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedReaction, setSelectedReaction] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<PostLike[] | PostHeart[] | PostIzibusiso[]>([]);
+  const [selectedFile, setSelectedFile] = useState<any | null>(null);
+
  
 
 
@@ -34,9 +37,26 @@ import { faUser } from '@fortawesome/free-solid-svg-icons'; // Import the "fa-us
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const isVideo = (url: string) => {
-    return url && /\.(mp4|mov|avi|mkv|webm|MOV)$/i.test(url);
-  };
+  const isValidHttpUrl = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+};
+
+const isVideo = (url: string) => {
+  if (!url || !isValidHttpUrl(url)) return false;
+
+  const pathname = new URL(url).pathname;
+  const ext = pathname.split('.').pop()?.toLowerCase();
+  return ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext ?? '');
+};
+
+
+
+
 
 
 
@@ -89,64 +109,61 @@ import { faUser } from '@fortawesome/free-solid-svg-icons'; // Import the "fa-us
   };
 
 
-  const pickImage = async () => {
-    // Ask for permission to access the camera roll (if not already granted)
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission to access the camera roll is required!');
-      return;
-    }
-  
-    // Launch the image picker and set the selected image
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
-  
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImage(result.assets[0].uri); // Accessing URI from the first asset
-    }
-  };
+  const pickMedia = async () => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (status !== 'granted') {
+    Alert.alert('Permission to access the camera roll is required!');
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.All, // Allows both images and videos
+    allowsEditing: true,
+    quality: 1,
+  });
+
+  if (!result.canceled && result.assets && result.assets.length > 0) {
+    const asset = result.assets[0];
+    
+    // Dynamically get file type and name
+    const file = {
+      uri: asset.uri,
+      type: asset.type === 'video' ? 'video/mp4' : 'image/jpeg',
+      name: asset.type === 'video' ? 'video.mp4' : 'image.jpg',
+    } as any;
+
+    setImage(asset.uri); // Or setMediaUri
+    setSelectedFile(file); // <-- store the full file object for upload
+  }
+};
+
+
   
 
   
   const handleSubmit = async () => {
-    if (!title || !image) {
-      console.log(title, image);
-      Alert.alert('Please provide both a title and an image!');
-      return;
-    }
-  
-    try {
-      console.log('Submitting form with:', title, image);
-      const file = {
-           uri: image, // local file URI
-           type: 'image/jpeg',
-           name: 'image.jpg',
-      } as any;
+  if (!title || !selectedFile) {
+    Alert.alert('Please provide both a title and a media file!');
+    return;
+  }
 
-      const formData = new FormData();
-      formData.append('file', file);
-  
-      
-      const id = await AsyncStorage.getItem('userId');
-      if (!id) {
-            throw new Error('User ID not found');
-      }
-      const response = await uploadImageTimeLine(formData, id, title);
+  try {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
 
-      console.log('your response is ', response);
-        // Append the new post to the timeline state
-        setTimeLine((prevTimeline) => [response, ...prevTimeline]);
-  
-      // Handle the response from the service (e.g., show success message)
-      Alert.alert('Form Submitted', `Title: ${title}\nImage upload successful!`);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      Alert.alert('Error', 'There was an error submitting your form.');
-    }
-  };
+    const id = await AsyncStorage.getItem('userId');
+    if (!id) throw new Error('User ID not found');
+
+    const response = await uploadImageTimeLine(formData, id, title);
+    setTimeLine((prev) => [response, ...prev]);
+    Alert.alert('Upload successful!');
+  } catch (error) {
+    console.error('Upload failed:', error);
+    Alert.alert('Upload error', 'There was an error uploading your media.');
+  }
+};
+
 
   
   
@@ -166,41 +183,42 @@ const handleReaction = (postId: string, type: string) => {
 
 
   const handleSubmitComment = async (postId: string) => {
+  const commentText = activities?.[postId]; 
+  const userId = await AsyncStorage.getItem('userId');
 
-    console.log('api triggeredcles')
-    const commentText = activities[postId]; 
-    const userId = await AsyncStorage.getItem('userId');
+  if (!commentText || !userId) {
+    Alert.alert('Error', 'Please enter a comment.');
+    return;
+  }
 
-    console.log('post id', postId);
-    console.log('comment', commentText);
-    console.log('user Id', userId);
-  
-    if (commentText && userId) {
-      try {
-        // Call the comment API
-        const response = await comment(commentText, userId, postId);
-        setTimeLine((prevTimeline) =>
-          prevTimeline.map((post) => {
-            if (post.postId === postId) {
-              return { 
-                ...post, 
-                comments: [...post.comments, response] 
-              }; 
-            }
-            return post;
-          })
-        );
-  
-        // Clear the comment input field
-        setCommentInputs((prevInputs) => ({ ...prevInputs, [postId]: '' }));
-      } catch (error) {
-        console.error('Error submitting comment:', error);
-        Alert.alert('Error', 'There was an error submitting your comment.');
-      }
-    } else {
-      Alert.alert('Error', 'Please provide a comment.');
+  try {
+    const response = await comment(commentText, userId, postId);
+
+    if (!response || typeof response !== 'object') {
+      console.error('Invalid or null response from comment API:', response);
+      Alert.alert('Error', 'Unexpected response from server.');
+      return;
     }
-  };
+
+    setTimeLine((prevTimeline) =>
+      prevTimeline.map((post) => {
+        if (post.postId === postId) {
+          return { 
+            ...post, 
+            comments: [...(post.comments || []), response] 
+          };
+        }
+        return post;
+      })
+    );
+
+    setCommentInputs((prevInputs) => ({ ...prevInputs, [postId]: '' }));
+  } catch (error) {
+    console.error('Error submitting comment:', error);
+    Alert.alert('Error', 'There was an error submitting your comment.');
+  }
+};
+
 
   
   const handleReactionLike = async (postId: string, reactionType: string) => {
@@ -355,6 +373,7 @@ const handleReaction = (postId: string, type: string) => {
             <View style={styles.postContainer}>
               {/* User Info */}
               <View style={styles.userInfo}>
+                <TouchableOpacity onPress={() => navigation.navigate('View', { userId: item.user.id })}>
                   {item.user.profilePictureUrl ? (
                      <Image 
                          source={{ uri: item.user.profilePictureUrl }} 
@@ -369,11 +388,13 @@ const handleReaction = (postId: string, type: string) => {
                   />
                 </View>
                )}
-
+               </TouchableOpacity>
                <View>
+                 <TouchableOpacity onPress={() => navigation.navigate('View', { userId: item.user.id })}>
                 <Text style={styles.userName}>
                     {item.user.firstName} {item.user.secondName}
                 </Text>
+                </TouchableOpacity>
             </View>
           </View>
 
@@ -382,26 +403,23 @@ const handleReaction = (postId: string, type: string) => {
               <Text style={styles.content}>{item.title}</Text>
     
               {/* Media (Video or Image) */}
-              {item.content ? (
-                isVideo(item.content) ? (
-                  <Video
-                    source={{ uri: item.content }}
-                    style={styles.media}
-                    controls
-                    resizeMode="contain"
-                    paused={false}
-                    repeat={true}
-                    onError={(error) => console.log("Video Error:", error)}
-                    onLoadStart={() => console.log("Loading video...")}
-                    onLoad={() => console.log("Video loaded")}
-                    onBuffer={() => console.log("Buffering...")}
-                  />
-                ) : item.content.startsWith("http") ? (
-                  <Image source={{ uri: item.content }} style={styles.media} />
+              {item.content && isVideo(item.content) ? (
+               <Video
+                   source={{ uri: item.content }}
+                   useNativeControls
+                   resizeMode={ResizeMode.COVER} 
+                   style={styles.media}
+                   isLooping
+                    onError={(e) => console.log('Video error:', e)}
+                />
+
+                ) : item.content?.startsWith('http') ? (
+                   <Image source={{ uri: item.content }} style={styles.media} />
                 ) : (
-                  <Text style={styles.mediaText}>{item.content}</Text>
-                )
-              ) : null}
+                   item.content && <Text style={styles.mediaText}>{item.content}</Text>
+                )}
+
+
                {/* Emoji Reactions */}
              {/* Emoji Reactions with Badges */}
              <View style={styles.reactionsContainer}>
@@ -485,7 +503,7 @@ const handleReaction = (postId: string, type: string) => {
               {showComments[item.postId] && 
                   item.comments !== null && Array.isArray(item.comments) && 
                   item.comments.map((comment) => (
-                       <View key={comment.id} style={styles.comment}>
+                       <View key={comment.commentId} style={styles.comment}>
                             <View style={styles.userInfo}>
                                {comment.user?.profilePictureUrl ? (
                                <Image 
@@ -569,7 +587,7 @@ const handleReaction = (postId: string, type: string) => {
                   />
   
                  {/* Image Upload Button */}
-          <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
+          <TouchableOpacity style={styles.uploadButton} onPress={pickMedia}>
             <Text style={styles.uploadText}>Pick an Image</Text>
           </TouchableOpacity>
 

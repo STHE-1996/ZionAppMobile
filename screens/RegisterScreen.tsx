@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Linking,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { ChurchNames, registerUser } from '../services/apiService'; // Import the register function
@@ -31,6 +32,8 @@ const RegistrationScreen = ({ navigation }: { navigation: any }) => {
     churchName: '', // Initially empty for a selected church or custom input
     enterChurchName: '', // Will hold custom church name if "NOT_AVAILABLE" is selected
   });
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [churches, setChurches] = useState<Church[]>([]);
@@ -208,16 +211,41 @@ const RegistrationScreen = ({ navigation }: { navigation: any }) => {
           onChangeText={(text) => handleInputChange('confirmPassword', text)}
         />
         <View style={styles.row}>
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.checkboxContainer}
-          >
-            <Text>{showPassword ? 'Hide' : 'Show'} password</Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Register</Text>
-        </TouchableOpacity>
+  <TouchableOpacity
+    onPress={() => setShowPassword(!showPassword)}
+    style={styles.checkboxContainer}
+  >
+    <Text>{showPassword ? 'Hide' : 'Show'} password</Text>
+  </TouchableOpacity>
+</View>
+
+<View style={styles.termsRow}>
+  <TouchableOpacity
+    style={styles.checkboxContainer}
+    onPress={() => setAgreedToTerms(!agreedToTerms)}
+  >
+    <View style={styles.checkbox}>
+      {agreedToTerms && <View style={styles.checked} />}
+    </View>
+    <Text style={styles.termsText}>
+      I agree to the{' '}
+      <Text
+        style={styles.link}
+        onPress={() => Linking.openURL('https://zionportal.co.za/policies')}
+      >
+        Terms & Condition
+      </Text>
+    </Text>
+  </TouchableOpacity>
+</View>
+
+<TouchableOpacity
+  style={[styles.button, !agreedToTerms && { backgroundColor: '#ccc' }]}
+  onPress={handleSubmit}
+  disabled={!agreedToTerms}
+>
+  <Text style={styles.buttonText}>Register</Text>
+</TouchableOpacity>
         <TouchableOpacity onPress={() => {
             // Navigate to RegisterScreen when clicked
             navigation.navigate('Login');
@@ -306,6 +334,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  termsRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginVertical: 10,
+},
+
+
+
+checkbox: {
+  width: 20,
+  height: 20,
+  borderWidth: 1,
+  borderColor: '#888',
+  marginRight: 10,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+checked: {
+  width: 12,
+  height: 12,
+  backgroundColor: '#007BFF',
+},
+
+termsText: {
+  fontSize: 14,
+  color: '#333',
+  flexShrink: 1,
+},
+
+
+
 });
 
 export default RegistrationScreen;

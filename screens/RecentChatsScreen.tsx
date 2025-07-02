@@ -84,7 +84,8 @@ const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
     return (
       <TouchableOpacity
         style={styles.chatItem}
-        onPress={() => handleChatSelect(user)} 
+        // onPress={() => handleChatSelect(user)} 
+         onPress={() => navigation.navigate('View', { userId: item.user.id })}
       >
         {user.profilePictureUrl ? (
       <Image
@@ -101,17 +102,26 @@ const RecentChatsScreen = ({ navigation }: { navigation: any }) => {
         />
       </View>
     )}
+    
+        
         <View style={styles.chatInfo}>
-          <Text style={styles.userName}>{user.firstName} {user.secondName}</Text>
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {hasMessages ? latestMessage?.message : 'No recent messages'}
-          </Text>
-        </View>
-        {unreadMessages > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unreadMessages}</Text>
-          </View>
-        )}
+  <TouchableOpacity onPress={() => handleChatSelect(user)}>
+    <Text style={styles.userName}>
+      {user.firstName} {user.secondName}
+    </Text>
+  </TouchableOpacity>
+
+  <Text style={styles.lastMessage} numberOfLines={1}>
+    {hasMessages ? latestMessage?.message : 'No recent messages'}
+  </Text>
+</View>
+
+{unreadMessages > 0 && (
+  <View style={styles.badge}>
+    <Text style={styles.badgeText}>{unreadMessages}</Text>
+  </View>
+)}
+
       </TouchableOpacity>
     );
   };

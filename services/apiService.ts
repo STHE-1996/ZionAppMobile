@@ -65,9 +65,18 @@ export const verifyAccount = async (enteredPin: string) => {
 
 export const getUsers = async () => {
   try {
-    const response = await axios.get('https://zion-app-8bcc080006a7.herokuapp.com/api/filter');
-    // const response = await axios.get('http://192.168.0.245:8082/api/filter');
-    return response.data; 
+    const token = await AsyncStorage.getItem('userToken');
+
+    const response = await axios.get(
+      'https://zion-app-8bcc080006a7.herokuapp.com/api/filter',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ Token added here
+        },
+      }
+    );
+
+    return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
@@ -76,9 +85,18 @@ export const getUsers = async () => {
 
 export const getChurchMembers = async (userId: string) => {
   try {
-    const response = await axios.get(`https://zion-app-8bcc080006a7.herokuapp.com/api/ChurchMembers/${userId}`);
-    // const response = await axios.get(`http://192.168.0.245:8082/api/ChurchMembers/${userId}`);
-    return response.data; 
+    const token = await AsyncStorage.getItem('userToken');
+
+    const response = await axios.get(
+      `https://zion-app-8bcc080006a7.herokuapp.com/api/ChurchMembers/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ Add token here
+        },
+      }
+    );
+
+    return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
     throw error;
