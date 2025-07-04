@@ -21,7 +21,9 @@
         "foregroundImage": "./assets/Logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.sthembiso1.ZionAppMobile"
+      "package": "com.sthembiso1.ZionAppMobile",
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35
     },
     "web": {
       "favicon": "./assets/Logo.png"

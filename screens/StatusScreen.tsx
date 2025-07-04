@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { TextInput, Alert, ActivityIndicator } from 'react-native';
 import { UserDetails } from "../models/UserDetails";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 interface Status {
   id: string;
@@ -51,44 +52,66 @@ const [loading, setLoading] = useState(false);
 
 
   useEffect(() => {
-    const loadStatuses = async () => {
-      try {
-         setLoading(true);
-        const res = await fetch(
-          "https://zion-app-8bcc080006a7.herokuapp.com/api/66f09754377b7a5898cb3e31",
-          { headers: { Accept: "application/json" } }
-        );
-        const jsonText = await res.text();
-        const data = JSON.parse(jsonText);
+  const loadStatuses = async () => {
+    try {
+      setLoading(true);
 
-        if (Array.isArray(data.statusModelList)) {
-          const parsed = data.statusModelList.map((status:any, index:any) => {
-          const url = status.statusContent?.trim() ?? "";
-          const extension = url.split("?")[0];
-        return {
-              id: status.statusId ?? `${index}`,
-              type: /\.(mp4|mov|avi|mkv|webm)$/i.test(extension) ? "video" : "image",
-              url,
-              title: status.caption || "Untitled",
-         };
+      const userId = await AsyncStorage.getItem('userId');
+      const token = await AsyncStorage.getItem('userToken');
+
+      if (!userId || !token) {
+        Alert.alert('Authentication error', 'User not logged in.');
+        setSampleStatuses([]);
+        return;
+      }
+
+      const response = await fetch(
+        `https://zion-app-8bcc080006a7.herokuapp.com/api/${userId}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.warn('Failed to fetch statuses. Status:', response.status);
+        setSampleStatuses([]);
+        return;
+      }
+
+      const jsonText = await response.text();
+      const data = JSON.parse(jsonText);
+
+      if (Array.isArray(data.statusModelList)) {
+        const parsed = data.statusModelList.map((status: any, index: number) => {
+          const url = status.statusContent?.trim() ?? '';
+          const extension = url.split('?')[0];
+          return {
+            id: status.statusId ?? `${index}`,
+            type: /\.(mp4|mov|avi|mkv|webm)$/i.test(extension) ? 'video' : 'image',
+            url,
+            title: status.caption || 'Untitled',
+          };
         });
 
-          setSampleStatuses(parsed);
-          
-        } else {
-          console.warn("No statusModelList found in response.");
-          setSampleStatuses([]);
-        }
-      } catch (err) {
-        console.error("Error loading statuses:", err);
+        setSampleStatuses(parsed);
+      } else {
+        console.warn('No statusModelList found in response.');
         setSampleStatuses([]);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('Error loading statuses:', err);
+      setSampleStatuses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadStatuses();
-  }, []);
+  loadStatuses();
+}, []);
+
 
    console.log('SampleStatuses', sampleStatuses);
 
@@ -117,64 +140,61 @@ const uploadStatus = async () => {
 
   try {
     setUploading(true);
-    const formData = new FormData();
+
     const fileName = mediaUri.split('/').pop() || 'upload.jpg';
-    const fileType = fileName.match(/\.(\w+)$/)?.[1];
+    const fileType = fileName.match(/\.(\w+)$/)?.[1]?.toLowerCase();
     const isVideo = /\.(mp4|mov|avi|mkv|webm)$/i.test(fileName);
 
+    const formData = new FormData();
     formData.append('file', {
       uri: mediaUri,
       name: fileName,
       type: isVideo ? `video/${fileType}` : `image/${fileType}`,
     } as any);
 
-    const userId = '66f09754377b7a5898cb3e31';
+    const userId = await AsyncStorage.getItem('userId');
+    const token = await AsyncStorage.getItem('userToken');
     const encodedCaption = encodeURIComponent(caption || 'Untitled');
 
-    const response = await fetch(
-      `https://zion-app-8bcc080006a7.herokuapp.com/api/uploadImageStatus/${userId}/${encodedCaption}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        body: formData,
-      }
-    );
+    if (!userId || !token) {
+      Alert.alert('Authentication error', 'User not logged in.');
+      return;
+    }
 
-    if (response.ok) {
-      // 👇 Inject new post at top
+    const url = `https://zion-app-8bcc080006a7.herokuapp.com/api/uploadImageStatus/${userId}/${encodedCaption}`;
+
+    const response = await axios.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 200 || response.status === 201) {
       const newStatus: Status = {
-        id: Date.now().toString(), // simple unique ID
+        id: Date.now().toString(),
         type: isVideo ? 'video' : 'image',
         url: mediaUri,
         title: caption || 'Untitled',
       };
 
       setSampleStatuses((prev) => [newStatus, ...prev]);
-
-      // ✅ Reset modal state
       setModalVisible(false);
       setCaption('');
       setMediaUri('');
       Alert.alert('Success', 'Status uploaded!');
     } else {
-      const text = await response.text();
-      console.warn('Upload failed, raw response:', text);
+      console.warn('Upload failed:', response.data);
       Alert.alert('Upload failed', 'Server did not accept the file.');
     }
   } catch (error) {
-  console.error(error);
-
-  if (error instanceof Error) {
-    Alert.alert('Upload error', error.message);
-  } else {
-    Alert.alert('Upload error', 'An unknown error occurred.');
+    console.error('Upload error:', error);
+    Alert.alert('Upload error', error instanceof Error ? error.message : 'An unknown error occurred.');
+  } finally {
+    setUploading(false);
   }
-} finally {
-  setUploading(false);
-}
 };
+
 
 
 useEffect(() => {
@@ -321,7 +341,7 @@ const fetchStatusesByUser = async (userId: string) => {
             source={require('../assets/Logo.png')}
             style={styles.noProductImage}
           />
-          <Text style={styles.noProductText}>No products available</Text>
+          <Text style={styles.noProductText}>You have no available status available</Text>
         </View>
       ) : (
         <FlatList
@@ -341,7 +361,7 @@ const fetchStatusesByUser = async (userId: string) => {
             source={require('../assets/Logo.png')}
             style={styles.noProductImage}
           />
-          <Text style={styles.noProductText}>No products available</Text>
+          <Text style={styles.noProductText}>No statuses available</Text>
         </View>
       ) : (
         <View style={styles.allStatusesContainer}>
