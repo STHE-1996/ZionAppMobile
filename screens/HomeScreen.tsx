@@ -12,7 +12,8 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
     { id: 6, title: 'Status', icon: 'pencil', color: '#01ebff', size: 40 },
     { id: 7, title: 'Music', icon: 'music', color: '#01ebff', size: 40 },
     { id: 8, title: 'Chat', icon: 'comment', color: '#01ebff', size: 40 },
-    { id: 9, title: 'Profile', icon: 'user-circle', color: '#01ebff', size: 50 }
+    { id: 9, title: 'Profile', icon: 'user-circle', color: '#01ebff', size: 50 },
+    { id: 10, title: 'Settings', icon: 'cog', color: '#01ebff', size: 45 }, 
 ];
 
   const showAlert = (title: string) => {
@@ -59,6 +60,8 @@ const HomeScreen = ({ navigation }: { navigation: any }) => {
                 navigation.navigate('StatusScreen');
               } else if (item.title === 'Event'){
                 showAlert(item.title);
+              } else if (item.title === 'Settings'){
+                navigation.navigate('SettingsScreen');
               }
             }}
           >

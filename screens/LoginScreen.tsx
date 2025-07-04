@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Image,View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Button } from 'react-native';
+import { Image,View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Button, Linking } from 'react-native';
 import { loginUser } from '../services/apiService';
 import Modal from 'react-native-modal';
 import FastImage from 'react-native-fast-image';
 // import { loginUser } from './services/apiService';  // import the login service
 import { WebView } from 'react-native-webview';
-import { Video } from 'expo-av';
+import { ResizeMode, Video } from 'expo-av';
 
 
 const LoginScreen = ({ navigation }: { navigation: any }) => {
@@ -88,7 +88,15 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
-
+       <Text style={styles.termsText}>
+             Forgot Password ?{' '}
+             <Text
+               style={styles.link}
+               onPress={() => Linking.openURL('https://zionportal.co.za/ForgotPassword')}
+             >
+               Forgot Password
+             </Text>
+           </Text>
       <View style={styles.footer}>
         <Text style={styles.footerText}>Don't have an account?</Text>
         <TouchableOpacity onPress={() => {
@@ -114,7 +122,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         style={styles.gif}
         shouldPlay
         isLooping
-        resizeMode="contain"
+         resizeMode={ResizeMode.COVER} 
         isMuted
       />
     )}
@@ -125,7 +133,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
         style={styles.gif}
         shouldPlay
         isLooping
-        resizeMode="contain"
+         resizeMode={ResizeMode.COVER} 
         isMuted
       />
     )}
@@ -200,6 +208,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 20,
   },
+  termsText: {
+  fontSize: 14,
+  color: '#333',
+  flexShrink: 1,
+},
   buttonText: {
     color: '#fff',
     fontSize: 18,
@@ -219,6 +232,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 5,
+  },
+  link: {
+    color: '#0055FF',
+    fontWeight: 'bold',
   },
   row: {
     flexDirection: 'row',

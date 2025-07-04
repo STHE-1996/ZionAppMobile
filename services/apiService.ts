@@ -127,17 +127,21 @@ export const ChurchNames = async () => {
 };
 
 export const registerUser = async (registrationData: any) => {
-  console.log('register request :',registrationData)
   try {
-    const response = await axios.post(`https://zion-app-8bcc080006a7.herokuapp.com/api/Registration`, registrationData, {
-      // const response = await axios.post(`http://192.168.0.245:8082/api/Registration`, registrationData, {
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    const response = await axios.post(
+      'https://zion-app-8bcc080006a7.herokuapp.com/api/Registration',
+      registrationData,
+      { headers: { Accept: 'application/json' } }
+    );
     return response.data;
-  } catch (error) {
-    console.error('Error registering user:', error);
-    throw error; 
+  } catch (error: any) {
+    if (error.response) {
+      // Always log response data here to confirm what backend sent
+      console.error('Backend error response:', error.response.data);
+      throw error.response; // So handleSubmit gets .status and .data
+    } else {
+      console.error('Request error:', error);
+      throw error;
+    }
   }
 };

@@ -8,12 +8,15 @@ import {
   ScrollView,
   Alert,
   Linking,
+  Button,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { ChurchNames, registerUser } from '../services/apiService'; // Import the register function
 import { Province as fetchProvinces } from '../services/apiService'; // Import functions
 import { Province } from '../models/Province';
 import { Church } from '../models/ChurchNames';
+import { ResizeMode, Video } from 'expo-av';
+import Modal from 'react-native-modal';
 
 const RegistrationScreen = ({ navigation }: { navigation: any }) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +40,17 @@ const RegistrationScreen = ({ navigation }: { navigation: any }) => {
 
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [churches, setChurches] = useState<Church[]>([]);
+  const [isModalVisible, setModalVisible] = useState(false);
+const [modalContent, setModalContent] = useState({ message: '', type: '' });
+
+const showModal = (message: string, type: 'success' | 'error') => {
+  setModalContent({ message, type });
+  setModalVisible(true);
+};
+
+const hideModal = () => {
+  setModalVisible(false);
+};
 
   useEffect(() => {
     const fetchProvincesData = async () => {
@@ -76,30 +90,125 @@ const RegistrationScreen = ({ navigation }: { navigation: any }) => {
   };
 
   const handleSubmit = async () => {
-    const registrationData = {
-      firstName: formData.firstName,
-      secondName: formData.secondName,
-      username: formData.username,
-      whatsappNumber: formData.whatsappNumber,
-      email: formData.email,
-      churchName: formData.church === 'NOT_AVAILABLE' ? formData.enterChurchName : formData.church, 
-      enterChurchName: formData.church === 'NOT_AVAILABLE' ? formData.enterChurchName : '',
-      zionType: formData.zionType,
-      gender: formData.gender,
-      province: formData.province,
-      profilePictureUrl: '', // Optional
-      password: formData.password,
-      confirmPassword: formData.confirmPassword,
-    };
+  // List required fields here explicitly
+  const requiredFields = [
+    'firstName',
+    'secondName',
+    'username',
+    'whatsappNumber',
+    'email',
+    'password',
+    'confirmPassword',
+    'gender',
+    'province',
+  ];
 
-    try {
-      const response = await registerUser(registrationData); // Call the registration API
-      Alert.alert('Success', 'You have successfully registered!');
-      navigation.navigate('VerificationScreen');
-    } catch (error) {
-      Alert.alert('Error', 'Registration failed. Please try again later.');
-    }
+  // Prepare data
+  const registrationData = {
+    firstName: formData.firstName.trim(),
+    secondName: formData.secondName.trim(),
+    username: formData.username.trim(),
+    whatsappNumber: formData.whatsappNumber.trim(),
+    email: formData.email.trim(),
+    churchName:
+      formData.church === 'NOT_AVAILABLE' ? formData.enterChurchName.trim() : formData.church.trim(),
+    enterChurchName:
+      formData.church === 'NOT_AVAILABLE' ? formData.enterChurchName.trim() : '',
+    zionType: formData.zionType.trim(),
+    gender: formData.gender.trim(),
+    province: formData.province.trim(),
+    profilePictureUrl: '',
+    password: formData.password,
+    confirmPassword: formData.confirmPassword,
   };
+
+  // Check for empty required fields before sending
+  type RegistrationDataKeys = keyof typeof registrationData;
+
+for (const field of requiredFields) {
+  const key = field as RegistrationDataKeys; // cast string to key of registrationData
+  if (!registrationData[key] || registrationData[key].length === 0) {
+    showModal(`Please fill in the ${field}`, 'error');
+    return;
+  }
+}
+
+
+  // Special check for churchName or enterChurchName
+  if (formData.church === 'NOT_AVAILABLE' && !registrationData.enterChurchName) {
+    showModal('Please enter your church name', 'error');
+    return;
+  }
+  if (formData.church !== 'NOT_AVAILABLE' && !registrationData.churchName) {
+    showModal('Please select your church', 'error');
+    return;
+  }
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(registrationData.email)) {
+    showModal('Please enter a valid email address.', 'error');
+    return;
+  }
+
+  // Password match validation
+  if (registrationData.password !== registrationData.confirmPassword) {
+    showModal('Passwords do not match.', 'error');
+    return;
+  }
+
+  // Password strength validation
+  const password = registrationData.password;
+  if (!/[a-z]/.test(password)) {
+    showModal('Password must contain at least one lowercase letter.', 'error');
+    return;
+  }
+  if (!/[A-Z]/.test(password)) {
+    showModal('Password must contain at least one uppercase letter.', 'error');
+    return;
+  }
+  if (!/\d/.test(password)) {
+    showModal('Password must contain at least one digit.', 'error');
+    return;
+  }
+  if (password.length < 8) {
+    showModal('Password must be at least 8 characters long.', 'error');
+    return;
+  }
+
+  // All validations passed — submit form
+  try {
+    const response = await registerUser(registrationData);
+    const successMsg = response.responseMessage || 'You have successfully registered!';
+    showModal(successMsg, 'success');
+
+    setTimeout(() => {
+      hideModal();
+      navigation.navigate('VerificationScreen');
+    }, 2500);
+  } catch (error: any) {
+    console.error('Registration error:', error);
+
+    // Use backend response message if available, otherwise fallback
+    let errorMessage = 'An error occurred. Please try again.';
+    if (error?.response?.data?.responseMessage) {
+      errorMessage = error.response.data.responseMessage;
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message || errorMessage;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    } else if (error?.response?.status) {
+      errorMessage = `Request failed with status ${error.response.status}`;
+    }
+
+    showModal(errorMessage, 'error');
+  }
+};
+
+
+
+
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -255,7 +364,46 @@ const RegistrationScreen = ({ navigation }: { navigation: any }) => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+  isVisible={isModalVisible}
+  onBackdropPress={hideModal}
+  backdropColor="transparent"
+  style={{ margin: 0 }}
+>
+  <View style={styles.modalContent}>
+    <Text style={styles.modalText}>{modalContent.message}</Text>
+
+    {modalContent.type === 'success' && (
+      <Video
+        source={require('../assets/love.gif')}
+        style={styles.gif}
+        shouldPlay
+        isLooping
+         resizeMode={ResizeMode.COVER} 
+        isMuted
+      />
+    )}
+
+    {modalContent.type === 'error' && (
+      <Video
+        source={require('../assets/error.gif - Online GIF to MP4 Video converter.mp4')}
+        style={styles.gif}
+        shouldPlay
+        isLooping
+         resizeMode={ResizeMode.COVER} 
+        isMuted
+      />
+    )}
+
+    <Button title="Close" onPress={hideModal} />
+  </View>
+</Modal>
+
+
     </ScrollView>
+
+    
   );
 };
 
@@ -363,8 +511,25 @@ termsText: {
   color: '#333',
   flexShrink: 1,
 },
-
-
+  modalContent: {
+  backgroundColor: 'white',
+  padding: 20,
+  borderRadius: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
+  alignSelf: 'center', // 👈 Add this
+  width: 320,          // Optional fixed width
+},
+  gif: {
+    width: 200,
+    height: 200,
+    marginTop: 20,
+  },
+  modalText: {
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
 
 });
 
