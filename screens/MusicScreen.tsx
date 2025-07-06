@@ -15,6 +15,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
+
+
 
 export interface Song {
   songId: string;
@@ -42,7 +45,13 @@ const MusicScreen = () => {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [album, setAlbums] = useState<Album[]>([]);
-    const [myAlbums, setMyAlbums] = useState<Album[]>([]);
+  const [myAlbums, setMyAlbums] = useState<Album[]>([]);
+  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
+  const [songModalVisible, setSongModalVisible] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [currentPlaying, setCurrentPlaying] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
 
   const pickAlbumImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -179,6 +188,29 @@ const MusicScreen = () => {
 };
 
 
+
+useEffect(() => {
+  const configureAudio = async () => {
+    await Audio.requestPermissionsAsync?.(); // for iOS (always safe)
+
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      staysActiveInBackground: true,
+      playsInSilentModeIOS: true,
+      shouldDuckAndroid: true,
+      interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix,
+      interruptionModeAndroid: Audio.InterruptionModeAndroid.DuckOthers,
+      playThroughEarpieceAndroid: false,
+    });
+  };
+
+  configureAudio();
+}, []);
+
+
+
+
+
  useEffect(() => {
   const fetchAlbum = async () => {
     setLoading(true);
@@ -224,6 +256,45 @@ const MusicScreen = () => {
   }
 }, [activeTab]);
 
+
+
+const playSong = async (url: string, songId: string) => {
+  if (sound && currentPlaying === songId) {
+    if (isPlaying) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
+    } else {
+      await sound.playAsync();
+      setIsPlaying(true);
+    }
+    return;
+  }
+
+  // Stop the current song if different
+  if (sound) {
+    await sound.unloadAsync();
+  }
+
+  const { sound: newSound } = await Audio.Sound.createAsync(
+    { uri: url },
+    { shouldPlay: true }
+  );
+
+  setSound(newSound);
+  setCurrentPlaying(songId);
+  setIsPlaying(true);
+};
+
+
+useEffect(() => {
+  return sound
+    ? () => {
+        sound.unloadAsync();
+      }
+    : undefined;
+}, [sound]);
+
+
   return (
 <View style={styles.container}>
   {/* Tab Buttons */}
@@ -255,10 +326,15 @@ const MusicScreen = () => {
     ) : (
       <ScrollView contentContainerStyle={styles.gridContainer}>
         {myAlbums.map((album) => (
-          <View key={album.albumId} style={styles.productCard}>
+          <TouchableOpacity key={album.albumId} style={styles.productCard}
+          onPress={() => {
+                setSelectedAlbum(album);
+                setSongModalVisible(true);
+             }}
+             >
             <Image source={{ uri: album.albumImgUrl }} style={styles.productImage} />
             <Text style={styles.productName}>{album.albumTitle}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     )
@@ -271,10 +347,15 @@ const MusicScreen = () => {
     ) : (
       <ScrollView contentContainerStyle={styles.gridContainer}>
         {album.map((album) => (
-          <View key={album.albumId} style={styles.productCard}>
+          <TouchableOpacity key={album.albumId} style={styles.productCard}
+            onPress={() => {
+                setSelectedAlbum(album);
+                setSongModalVisible(true);
+             }}
+             >
             <Image source={{ uri: album.albumImgUrl }} style={styles.productImage} />
             <Text style={styles.productName}>{album.albumTitle}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     )
@@ -336,6 +417,48 @@ const MusicScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={songModalVisible} transparent animationType="slide">
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                   <Text style={styles.modalTitle}>Songs in {selectedAlbum?.albumTitle}</Text>
+      <ScrollView>
+        {selectedAlbum?.musicModelList.map((song) => (
+              <View key={song.songId} style={styles.songItem}>
+                 <Image
+                    source={{ uri: song.ulbumProfileUrl }}
+                    style={styles.albumCover}
+                 />
+                      <View style={{ flex: 1 }}>
+                             <Text style={styles.songTitle}>{song.title}</Text>
+                              <Text style={styles.songArtist}>
+                                     Uploaded: {song.localDateTime || 'N/A'}
+                              </Text>
+                      </View>
+                 <TouchableOpacity
+                      onPress={() => playSong(song.songUrl, song.songId)}
+                      style={styles.playIcon}
+                  >
+              <Icon
+                    name={
+                        currentPlaying === song.songId && isPlaying ? 'pause' : 'play'
+                      }
+                    size={20}
+                    color="black"
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+      </ScrollView>
+      <TouchableOpacity onPress={() => setSongModalVisible(false)}>
+        <Text style={styles.closeButton}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
+
+
 </View>
 );
 };
@@ -442,6 +565,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#555',
   },
+songItem: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  padding: 10,
+  borderBottomWidth: 0.5,
+  borderColor: '#ccc',
+},
+
+albumCover: {
+  height: 40,
+  width: 40,
+  backgroundColor: '#eaeaea',
+  borderRadius: 5,
+  marginRight: 10,
+},
+
+songTitle: {
+  fontWeight: '600',
+  color: '#000',
+},
+
+songArtist: {
+  fontSize: 12,
+  color: '#555',
+},
+
+playIcon: {
+  marginLeft: 10,
+  alignSelf: 'center',
+},
+
+
   noProductContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 },
   noProductImage: { width: 150, height: 150, resizeMode: 'contain' },
   noProductText: { marginTop: 10, fontSize: 16, color: '#666' },
